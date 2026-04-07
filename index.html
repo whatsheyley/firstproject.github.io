@@ -198,10 +198,10 @@
         // 登录函数
         const handleLogin = async () => {
             try {
-                await auth.signInWithPassword({
-                    username: loginForm.username,
-                    password: loginForm.password
-                });
+                await auth.signInWithUsernameAndPassword(
+                    loginForm.username,
+                    loginForm.password
+                );
                 setIsLoggedIn(true);
                 const userResult = await auth.getUser();
                 setCurrentUser(userResult.data.user);
