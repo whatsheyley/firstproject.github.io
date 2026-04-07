@@ -14,6 +14,8 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- CloudBase SDK -->
+    <script src="https://imgcache.qq.com/qcloud/cloudbase-js-sdk/1.7.1/cloudbase.full.js"></script>
 
     <style>
         /* 极致的流体全色盘渐变背景 */
@@ -90,6 +92,14 @@
 <script type="text/babel">
     const { useState, useEffect, useMemo } = React;
 
+    // --- 初始化云开发 ---
+    const app = cloudbase.init({
+        env: "harmony-dev-6g2lhfsb3507b9c4",
+        region: "ap-shanghai"
+    });
+    const auth = app.auth();
+    const db = app.database();
+
     // --- 治愈系文案（克制、去鸡汤） ---
     const QUOTES = [
         "Done is better than perfect.",
@@ -102,6 +112,11 @@
     ];
 
     function App() {
+        // 登录状态
+        const [isLoggedIn, setIsLoggedIn] = useState(false);
+        const [currentUser, setCurrentUser] = useState(null);
+        const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+
         // 路由状态：'list' = 共享看板, 'edit' = 填报/编辑页
         const [currentView, setCurrentView] = useState('list');
 
@@ -113,12 +128,33 @@
         const [formData, setFormData] = useState(getInitialForm());
         const [history, setHistory] = useState([]);
 
+        // 检查登录状态
+        useEffect(() => {
+            checkLoginStatus();
+        }, []);
+
+        const checkLoginStatus = async () => {
+            try {
+                const loginState = await auth.getLoginState();
+                if (loginState) {
+                    setIsLoggedIn(true);
+                    const userResult = await auth.getUser();
+                    setCurrentUser(userResult.data.user);
+                    loadAllShipments();
+                }
+            } catch (err) {
+                console.log('未登录');
+            }
+            lucide.createIcons();
+        };
+
         // 初始化时加载缓存
         useEffect(() => {
-            const saved = JSON.parse(localStorage.getItem('corp_shipments') || '[]');
-            setShipments(saved);
+            if (isLoggedIn) {
+                loadAllShipments();
+            }
             lucide.createIcons(); // 渲染图标
-        }, []);
+        }, [isLoggedIn]);
 
         useEffect(() => {
             lucide.createIcons();
@@ -159,6 +195,46 @@
         }, [chargeableWeight, apTotalFreight]);
 
         // --- 操作函数 ---
+        // 登录函数
+        const handleLogin = async () => {
+            try {
+                await auth.signInWithPassword({
+                    username: loginForm.username,
+                    password: loginForm.password
+                });
+                setIsLoggedIn(true);
+                const userResult = await auth.getUser();
+                setCurrentUser(userResult.data.user);
+                alert('登录成功！');
+                loadAllShipments();
+            } catch (err) {
+                alert('登录失败：' + err.message);
+            }
+        };
+
+        // 登出函数
+        const handleLogout = async () => {
+            try {
+                await auth.signOut();
+                setIsLoggedIn(false);
+                setCurrentUser(null);
+                setShipments([]);
+                alert('已退出登录');
+            } catch (err) {
+                alert('登出失败：' + err.message);
+            }
+        };
+
+        // 从云端加载所有货单
+        const loadAllShipments = async () => {
+            try {
+                const result = await db.collection('shipments').get();
+                setShipments(result.data);
+            } catch (err) {
+                console.error('加载货单失败：', err);
+            }
+        };
+
         function getInitialForm() {
             return {
                 jobId: '', image: '',
@@ -181,7 +257,7 @@
         const startEdit = (shipment) => {
             setFormData(shipment.currentData);
             setHistory(shipment.history || []);
-            setEditingId(shipment.id);
+            setEditingId(shipment._id); // 云数据库使用 _id
             setCurrentView('edit');
         };
 
@@ -233,40 +309,96 @@
         };
 
         // 保存并返回主页
-        const saveAndReturn = () => {
+        const saveAndReturn = async () => {
             if (!formData.jobId) {
                 alert("请至少填写一个工作单号！");
                 return;
             }
             const finalData = {
-                id: editingId || Date.now().toString(),
                 currentData: { ...formData, chargeableWeight, arTotal, apTotal, profit },
                 history: history,
-                updatedAt: new Date().toISOString()
+                updatedAt: new Date().toISOString(),
+                createdBy: currentUser?.user_metadata?.username || currentUser?.user_metadata?.nickName || 'unknown'
             };
 
-            let newList;
-            if (editingId) {
-                newList = shipments.map(s => s.id === editingId ? finalData : s);
-            } else {
-                newList = [finalData, ...shipments];
+            try {
+                if (editingId) {
+                    // 更新现有货单
+                    await db.collection('shipments').doc(editingId).update(finalData);
+                    alert('货单已更新！');
+                } else {
+                    // 创建新货单
+                    await db.collection('shipments').add(finalData);
+                    alert('货单已保存！');
+                }
+                loadAllShipments();
+                setCurrentView('list');
+            } catch (err) {
+                alert('保存失败：' + err.message);
             }
-
-            setShipments(newList);
-            localStorage.setItem('corp_shipments', JSON.stringify(newList));
-            setCurrentView('list');
         };
 
-        const deleteShipment = (id, e) => {
+        const deleteShipment = async (id, e) => {
             e.stopPropagation();
             if(confirm('确定要删除这票货吗？')) {
-                const newList = shipments.filter(s => s.id !== id);
-                setShipments(newList);
-                localStorage.setItem('corp_shipments', JSON.stringify(newList));
+                try {
+                    await db.collection('shipments').doc(id).remove();
+                    loadAllShipments();
+                    alert('删除成功！');
+                } catch (err) {
+                    alert('删除失败：' + err.message);
+                }
             }
-        }
+        };
 
         // --- 页面渲染 ---
+        // 未登录时显示登录界面
+        if (!isLoggedIn) {
+            return (
+                <div className="min-h-screen flex items-center justify-center p-4">
+                    <div className="glass-panel p-8 rounded-3xl max-w-md w-full">
+                        <div className="text-center mb-8">
+                            <i data-lucide="package-search" className="w-16 h-16 text-[#2c2722] mx-auto mb-4"></i>
+                            <h1 className="text-3xl font-black text-[#2c2722] mb-2">SyncFreight</h1>
+                            <p className="text-gray-600">物流协同管理系统</p>
+                        </div>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-bold text-gray-600 mb-1">用户名</label>
+                                <input
+                                    type="text"
+                                    value={loginForm.username}
+                                    onChange={(e) => setLoginForm({...loginForm, username: e.target.value})}
+                                    className="input-glass w-full p-3 rounded-xl"
+                                    placeholder="请输入用户名"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-600 mb-1">密码</label>
+                                <input
+                                    type="password"
+                                    value={loginForm.password}
+                                    onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
+                                    onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+                                    className="input-glass w-full p-3 rounded-xl"
+                                    placeholder="请输入密码"
+                                />
+                            </div>
+                            <button
+                                onClick={handleLogin}
+                                className="w-full px-6 py-3 bg-[#2c2722] text-white rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition"
+                            >
+                                登录
+                            </button>
+                        </div>
+                        <div className="mt-6 text-center text-sm text-gray-500">
+                            <p>首次使用请联系管理员创建账号</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
         return (
             <div className="relative pb-24">
 
@@ -275,13 +407,24 @@
                     <div className="flex items-center gap-3">
                         <i data-lucide="package-search" className="text-[#2c2722]"></i>
                         <span className="font-bold text-xl tracking-wide">SyncFreight 物流协同</span>
+                        <span className="text-xs text-gray-500">| {currentUser?.user_metadata?.username || currentUser?.user_metadata?.nickName || '用户'}</span>
                     </div>
                     {currentView === 'edit' ? (
-                        <button onClick={() => setCurrentView('list')} className="text-sm font-bold text-gray-600 hover:text-black flex items-center gap-1">
-                            <i data-lucide="arrow-left" className="w-4 h-4"></i> 返回看板
-                        </button>
+                        <div className="flex items-center gap-4">
+                            <button onClick={() => setCurrentView('list')} className="text-sm font-bold text-gray-600 hover:text-black flex items-center gap-1">
+                                <i data-lucide="arrow-left" className="w-4 h-4"></i> 返回看板
+                            </button>
+                            <button onClick={handleLogout} className="text-sm font-bold text-red-600 hover:text-red-800 flex items-center gap-1">
+                                <i data-lucide="log-out" className="w-4 h-4"></i> 退出
+                            </button>
+                        </div>
                     ) : (
-                        <span className="text-sm font-medium text-gray-500">共 {shipments.length} 票货物</span>
+                        <div className="flex items-center gap-4">
+                            <span className="text-sm font-medium text-gray-500">共 {shipments.length} 票货物</span>
+                            <button onClick={handleLogout} className="text-sm font-bold text-red-600 hover:text-red-800 flex items-center gap-1">
+                                <i data-lucide="log-out" className="w-4 h-4"></i> 退出
+                            </button>
+                        </div>
                     )}
                 </nav>
 
@@ -310,8 +453,8 @@
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {shipments.map(item => (
-                                        <div key={item.id} onClick={() => startEdit(item)} className="glass-panel rounded-2xl p-6 cursor-pointer hover:shadow-xl hover:bg-white/60 transition group relative">
-                                            <button onClick={(e) => deleteShipment(item.id, e)} className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition">
+                                        <div key={item._id} onClick={() => startEdit(item)} className="glass-panel rounded-2xl p-6 cursor-pointer hover:shadow-xl hover:bg-white/60 transition group relative">
+                                            <button onClick={(e) => deleteShipment(item._id, e)} className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition">
                                                 <i data-lucide="trash-2" className="w-5 h-5"></i>
                                             </button>
                                             <div className="flex items-center gap-3 mb-4">
