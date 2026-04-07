@@ -3,244 +3,509 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>物流货物信息与账单系统</title>
-    <!-- 引入 Tailwind CSS 进行极简 UI 设计 -->
+    <title>企业级物流货单管理系统</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入 React 和 Babel 用于处理交互和状态 -->
+    <!-- React & Babel -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- SheetJS Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
     <style>
-        /* 核心需求：浅绿色和米白色的渐变实时流动变化 */
-        @keyframes gradientFlow {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+        /* 极致的流体全色盘渐变背景 */
+        @keyframes gradient-flow {
+            0% { background-position: 0% 50%; filter: hue-rotate(0deg); }
+            50% { background-position: 100% 50%; filter: hue-rotate(180deg); }
+            100% { background-position: 0% 50%; filter: hue-rotate(360deg); }
         }
         body {
             margin: 0;
-            background: linear-gradient(-45deg, #e8f5e9, #fdfbf7, #dcfce7, #f5f5dc);
-            background-size: 400% 400%;
-            animation: gradientFlow 15s ease infinite;
-            color: #2d2318; /* 深棕色/黑色字体 */
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(120deg, #d4fc79, #96e6a1, #e0c3fc, #8ec5fc, #fbc2eb);
+            background-size: 300% 300%;
+            animation: gradient-flow 30s ease-in-out infinite alternate;
+            color: #2c2722;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh;
         }
-        /* 玻璃拟态卡片效果 */
-        .glass-card {
+
+        /* 高级玻璃拟态 */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        }
+        .input-glass {
             background: rgba(255, 255, 255, 0.6);
-            backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.8);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .input-glass:focus {
+            background: rgba(255, 255, 255, 0.9);
+            outline: none;
+            border-color: #2c2722;
+            box-shadow: 0 0 0 2px rgba(44, 39, 34, 0.1);
+        }
+        .input-locked {
+            background: rgba(200, 200, 200, 0.2);
+            color: #555;
+            cursor: not-allowed;
+        }
+
+        /* 治愈系便利贴动画 */
+        @keyframes breathe {
+            0%, 100% { transform: translateY(0) rotate(-2deg); }
+            50% { transform: translateY(-5px) rotate(-1deg); }
+        }
+        .sticky-note {
+            background: #fffdf5;
+            box-shadow: 2px 4px 15px rgba(0,0,0,0.08);
+            border-radius: 2px 15px 15px 2px;
+            animation: breathe 6s ease-in-out infinite;
+            position: relative;
+        }
+        /* 胶带效果 */
+        .sticky-note::before {
+            content: "";
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%) rotate(-3deg);
+            width: 40px;
+            height: 15px;
+            background: rgba(255,255,255,0.4);
+            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
     </style>
 </head>
 <body>
-    <div id="root"></div>
+<div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect } = React;
+<script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
 
-        function App() {
-            // --- 状态管理 ---
-            const [showModal, setShowModal] = useState(true);
-            const [jobInfo, setJobInfo] = useState({ id: '', image: '' });
-            
-            // 核心表单数据
-            const [formData, setFormData] = useState({
+    // --- 治愈系文案（克制、去鸡汤） ---
+    const QUOTES = [
+        "Done is better than perfect.",
+        "深呼吸，一件一件来。",
+        "工作是无限的，但你的精力是珍贵的。",
+        "允许一切发生，做真实的自己。",
+        "Slow is smooth, smooth is fast.",
+        "别急，答案都在时间里。",
+        "偶尔停下，也是一种前进。"
+    ];
+
+    function App() {
+        // 路由状态：'list' = 共享看板, 'edit' = 填报/编辑页
+        const [currentView, setCurrentView] = useState('list');
+
+        // 全局数据：存储所有货单
+        const [shipments, setShipments] = useState([]);
+
+        // 当前正在编辑的单据数据
+        const [editingId, setEditingId] = useState(null);
+        const [formData, setFormData] = useState(getInitialForm());
+        const [history, setHistory] = useState([]);
+
+        // 初始化时加载缓存
+        useEffect(() => {
+            const saved = JSON.parse(localStorage.getItem('corp_shipments') || '[]');
+            setShipments(saved);
+            lucide.createIcons(); // 渲染图标
+        }, []);
+
+        useEffect(() => {
+            lucide.createIcons();
+        }, [currentView]);
+
+        // 诗句定时器
+        const [quoteIndex, setQuoteIndex] = useState(0);
+        useEffect(() => {
+            const t = setInterval(() => setQuoteIndex(i => (i + 1) % QUOTES.length), 30000);
+            return () => clearInterval(t);
+        }, []);
+
+        // --- 核心计算逻辑 (Hook化以保证实时响应) ---
+        const volWeight = parseFloat((formData.cbm * 166.67 || 0).toFixed(2));
+        const chargeableWeight = Math.max(parseFloat(formData.gw || 0), volWeight);
+
+        // 应收逻辑
+        const arTotal = parseFloat((formData.arUnitPrice * chargeableWeight || 0).toFixed(2));
+
+        // 应付逻辑
+        const apTotalFreight = parseFloat((formData.apUnitPrice * chargeableWeight || 0).toFixed(2));
+        let apTotal = 0;
+        if (formData.apType === '1') {
+            apTotal = apTotalFreight + parseFloat(formData.apPickupFee || 0);
+        } else {
+            apTotal = apTotalFreight + parseFloat(formData.apCustomsFee || 0) + parseFloat(formData.apPickupFee || 0);
+        }
+        apTotal = parseFloat(apTotal.toFixed(2));
+        const profit = parseFloat((arTotal - apTotal).toFixed(2));
+
+        // 同步计算结果到 formData (用于展示和保存)
+        useEffect(() => {
+            setFormData(prev => ({
+                ...prev,
+                arWeight: chargeableWeight,
+                apTotalFreight: apTotalFreight
+            }));
+        }, [chargeableWeight, apTotalFreight]);
+
+        // --- 操作函数 ---
+        function getInitialForm() {
+            return {
+                jobId: '', image: '',
                 client: '', pol: '', pod: '',
                 qty: 0, gw: 0, cbm: 0,
                 taxRefund: false, customs: false, generalCargo: true,
                 arUnitPrice: 0, arWeight: 0, agencyName: '',
-                apType: '1', apTotalFreight: 0, apCustomsFee: 0, apPickupFee: 0, apPaid: false,
+                apUnitPrice: 0, apType: '1', apTotalFreight: 0, apCustomsFee: 0, apPickupFee: 0, apPaid: false,
                 fobDate: '', fobAmount: 0
-            });
+            };
+        }
 
-            // 历史版本控制
-            const [history, setHistory] = useState([]);
+        const startCreate = () => {
+            setFormData(getInitialForm());
+            setHistory([]);
+            setEditingId(null);
+            setCurrentView('edit');
+        };
 
-            // --- 自动计算逻辑 ---
-            const volWeight = parseFloat((formData.cbm * 166.67).toFixed(2));
-            const chargeableWeight = Math.max(parseFloat(formData.gw || 0), volWeight);
-            const arTotal = parseFloat((formData.arUnitPrice * formData.arWeight).toFixed(2));
-            
-            let apTotal = 0;
-            if (formData.apType === '1') {
-                apTotal = parseFloat(formData.apTotalFreight) + parseFloat(formData.apPickupFee);
-            } else {
-                apTotal = parseFloat(formData.apTotalFreight) + parseFloat(formData.apCustomsFee) + parseFloat(formData.apPickupFee);
+        const startEdit = (shipment) => {
+            setFormData(shipment.currentData);
+            setHistory(shipment.history || []);
+            setEditingId(shipment.id);
+            setCurrentView('edit');
+        };
+
+        const handleFormChange = (e) => {
+            const { name, value, type, checked } = e.target;
+            setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+        };
+
+        const handleFormBlur = () => {
+            // 失去焦点时记录历史版本
+            setHistory(prev => [
+                { ...formData, version: prev.length + 1, timestamp: new Date().toLocaleString() },
+                ...prev
+            ]);
+        };
+
+        // 格式化金额
+        const fmtMoney = (num) => new Intl.NumberFormat('zh-CN', { style: 'currency', currency: 'CNY' }).format(num || 0);
+
+        // 导出 Excel
+        const handleExportExcel = () => {
+            const data = [
+                ["物流系统结算清单"],
+                [],
+                ["基本信息", "", "货物详情"],
+                ["工作单号", formData.jobId || '未命名', "件数", formData.qty],
+                ["客户名称", formData.client, "毛重(KG)", formData.gw],
+                ["起运港", formData.pol, "体积(CBM)", formData.cbm],
+                ["目的港", formData.pod, "计费重(KG)", chargeableWeight],
+                [],
+                ["应收费用 (FOB)", "", "应付成本"],
+                ["应收单价", formData.arUnitPrice, "买入单价", formData.apUnitPrice],
+                ["计费重量", chargeableWeight, "报关类型", formData.apType === '1' ? '代理报关(含费)' : '无代理报关'],
+                ["总运费", arTotal, "总运费(应付)", apTotalFreight],
+                ["代理公司", formData.agencyName, "报关费", formData.apType==='2'? formData.apCustomsFee : '包含'],
+                ["", "", "提货费", formData.apPickupFee],
+                ["应收合计", arTotal, "应付合计", apTotal],
+                [],
+                ["利润核算", "", "工厂FOB"],
+                ["单票利润", profit, "收款日期", formData.fobDate],
+                ["结算状态", formData.apPaid ? '✅ 应付已结清' : '❌ 应付未结清', "收款金额", formData.fobAmount],
+                [],
+                ["生成时间", new Date().toLocaleString()]
+            ];
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "单据明细");
+            XLSX.writeFile(wb, `单据_${formData.jobId || Date.now()}.xlsx`);
+        };
+
+        // 保存并返回主页
+        const saveAndReturn = () => {
+            if (!formData.jobId) {
+                alert("请至少填写一个工作单号！");
+                return;
             }
-            apTotal = parseFloat(apTotal.toFixed(2)) || 0;
-            const profit = parseFloat((arTotal - apTotal).toFixed(2));
-
-            // --- 事件处理 ---
-            // 每次输入框失去焦点（即改完一个数据）时，保存一个历史版本
-            const handleBlur = () => {
-                setHistory(prev => [{...formData, timestamp: new Date().toLocaleString(), version: prev.length + 1}, ...prev]);
+            const finalData = {
+                id: editingId || Date.now().toString(),
+                currentData: { ...formData, chargeableWeight, arTotal, apTotal, profit },
+                history: history,
+                updatedAt: new Date().toISOString()
             };
 
-            const handleChange = (e) => {
-                const { name, value, type, checked } = e.target;
-                setFormData(prev => ({
-                    ...prev,
-                    [name]: type === 'checkbox' ? checked : value
-                }));
-            };
+            let newList;
+            if (editingId) {
+                newList = shipments.map(s => s.id === editingId ? finalData : s);
+            } else {
+                newList = [finalData, ...shipments];
+            }
 
-            // 创建货单弹窗提交
-            const handleCreate = (e) => {
-                e.preventDefault();
-                setShowModal(false);
-                // 创建初始版本
-                setHistory([{...formData, timestamp: new Date().toLocaleString(), version: 1}]);
-            };
+            setShipments(newList);
+            localStorage.setItem('corp_shipments', JSON.stringify(newList));
+            setCurrentView('list');
+        };
 
-            // --- UI 渲染 ---
-            return (
-                <div className="min-h-screen p-4 md:p-8">
-                    {/* 弹窗：创建一票货 */}
-                    {showModal && (
-                        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-                            <div className="bg-white p-8 rounded-lg shadow-xl w-96">
-                                <h2 className="text-2xl font-bold mb-4 text-[#2d2318]">创建新货单</h2>
-                                <form onSubmit={handleCreate}>
-                                    <div className="mb-4">
-                                        <label className="block mb-2 font-bold">自定义工作编号</label>
-                                        <input required type="text" className="w-full border p-2 rounded focus:outline-none focus:border-[#2d2318]" 
-                                            onChange={e => setJobInfo({...jobInfo, id: e.target.value})} />
-                                    </div>
-                                    <div className="mb-6">
-                                        <label className="block mb-2 font-bold">自定义图片链接 (选填)</label>
-                                        <input type="text" className="w-full border p-2 rounded focus:outline-none focus:border-[#2d2318]" placeholder="http://..."
-                                            onChange={e => setJobInfo({...jobInfo, image: e.target.value})} />
-                                    </div>
-                                    <button type="submit" className="w-full bg-[#2d2318] text-white p-3 rounded font-bold hover:bg-black transition">
-                                        确认创建
-                                    </button>
-                                </form>
+        const deleteShipment = (id, e) => {
+            e.stopPropagation();
+            if(confirm('确定要删除这票货吗？')) {
+                const newList = shipments.filter(s => s.id !== id);
+                setShipments(newList);
+                localStorage.setItem('corp_shipments', JSON.stringify(newList));
+            }
+        }
+
+        // --- 页面渲染 ---
+        return (
+            <div className="relative pb-24">
+
+                {/* 顶部导航条 */}
+                <nav className="glass-panel sticky top-0 z-50 px-6 py-4 mb-8 flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                        <i data-lucide="package-search" className="text-[#2c2722]"></i>
+                        <span className="font-bold text-xl tracking-wide">SyncFreight 物流协同</span>
+                    </div>
+                    {currentView === 'edit' ? (
+                        <button onClick={() => setCurrentView('list')} className="text-sm font-bold text-gray-600 hover:text-black flex items-center gap-1">
+                            <i data-lucide="arrow-left" className="w-4 h-4"></i> 返回看板
+                        </button>
+                    ) : (
+                        <span className="text-sm font-medium text-gray-500">共 {shipments.length} 票货物</span>
+                    )}
+                </nav>
+
+                {/* 主体内容区 */}
+                <main className="max-w-6xl mx-auto px-4">
+
+                    {/* 视图1：公司级看板列表 */}
+                    {currentView === 'list' && (
+                        <div className="space-y-6 animate-fade-in">
+                            <div className="flex justify-between items-end">
+                                <div>
+                                    <h1 className="text-4xl font-black text-[#2c2722]">共享账单大厅</h1>
+                                    <p className="text-gray-600 mt-2">实时同步公司内所有操作账单，点击即可查看编辑历史版。</p>
+                                </div>
+                                <button onClick={startCreate} className="px-6 py-3 bg-[#2c2722] text-white rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition flex items-center gap-2">
+                                    <i data-lucide="plus-circle" className="w-5 h-5"></i> 新建一票货
+                                </button>
                             </div>
+
+                            {shipments.length === 0 ? (
+                                <div className="glass-panel p-16 rounded-3xl text-center flex flex-col items-center justify-center border-dashed border-2 border-gray-400">
+                                    <i data-lucide="inbox" className="w-16 h-16 text-gray-400 mb-4"></i>
+                                    <h3 className="text-xl font-bold text-gray-700">暂无数据</h3>
+                                    <p className="text-gray-500 mt-2">快去创建第一笔业务单据吧</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {shipments.map(item => (
+                                        <div key={item.id} onClick={() => startEdit(item)} className="glass-panel rounded-2xl p-6 cursor-pointer hover:shadow-xl hover:bg-white/60 transition group relative">
+                                            <button onClick={(e) => deleteShipment(item.id, e)} className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition">
+                                                <i data-lucide="trash-2" className="w-5 h-5"></i>
+                                            </button>
+                                            <div className="flex items-center gap-3 mb-4">
+                                                {item.currentData.image ?
+                                                    <img src={item.currentData.image} className="w-12 h-12 rounded-lg object-cover border-2 border-white shadow-sm" /> :
+                                                    <div className="w-12 h-12 rounded-lg bg-gray-200/50 flex items-center justify-center"><i data-lucide="box" className="text-gray-400"></i></div>
+                                                }
+                                                <div>
+                                                    <h3 className="font-black text-lg text-[#2c2722]">{item.currentData.jobId || '无单号'}</h3>
+                                                    <p className="text-xs text-gray-500 font-medium">更新于 {new Date(item.updatedAt).toLocaleDateString()}</p>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2 text-sm">
+                                                <div className="flex justify-between"><span className="text-gray-500">客户</span><span className="font-bold">{item.currentData.client || '-'}</span></div>
+                                                <div className="flex justify-between"><span className="text-gray-500">航线</span><span className="font-bold">{item.currentData.pol} ✈ {item.currentData.pod}</span></div>
+                                                <div className="flex justify-between"><span className="text-gray-500">计费重</span><span className="font-bold">{item.currentData.chargeableWeight} KG</span></div>
+                                            </div>
+                                            <div className="mt-4 pt-4 border-t border-gray-300/50 flex justify-between items-center">
+                                                <span className={`text-xs px-2 py-1 rounded-md font-bold ${item.currentData.apPaid ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                                                    {item.currentData.apPaid ? '款项已清' : '未付清'}
+                                                </span>
+                                                <span className="text-lg font-black text-[#2c2722]">{fmtMoney(item.currentData.profit)}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
 
-                    {/* 主界面 */}
-                    {!showModal && (
-                        <div className="max-w-5xl mx-auto space-y-6">
-                            {/* 头部信息 */}
-                            <div className="flex justify-between items-center glass-card p-6 rounded-xl">
-                                <h1 className="text-3xl font-bold text-[#2d2318]">工作单号: {jobInfo.id}</h1>
-                                {jobInfo.image && <img src={jobInfo.image} alt="货物" className="h-16 w-16 object-cover rounded-lg shadow" />}
-                            </div>
+                    {/* 视图2：表单编辑/填报页 */}
+                    {currentView === 'edit' && (
+                        <div className="space-y-8 animate-fade-in max-w-4xl mx-auto">
 
-                            {/* 时间轴 / 数据录入区 */}
-                            <div className="glass-card p-6 rounded-xl space-y-8">
-                                
-                                {/* 1. 客户信息 */}
-                                <section>
-                                    <h3 className="text-xl font-bold mb-3 border-b-2 border-[#2d2318] pb-1">1. 客户信息</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <div><label className="block text-sm">客户</label><input name="client" onBlur={handleBlur} onChange={handleChange} className="w-full p-2 border rounded bg-white/50" /></div>
-                                        <div><label className="block text-sm">起运港 (POL)</label><input name="pol" onBlur={handleBlur} onChange={handleChange} className="w-full p-2 border rounded bg-white/50" /></div>
-                                        <div><label className="block text-sm">目的港 (POD)</label><input name="pod" onBlur={handleBlur} onChange={handleChange} className="w-full p-2 border rounded bg-white/50" /></div>
-                                    </div>
-                                </section>
+                            {/* 头部基础定义 */}
+                            <section className="glass-panel p-6 rounded-2xl flex gap-6 items-center">
+                                <div className="flex-1">
+                                    <label className="block text-sm font-bold text-gray-600 mb-1">自定义工作单号 <span className="text-red-500">*</span></label>
+                                    <input name="jobId" value={formData.jobId} onChange={handleFormChange} onBlur={handleFormBlur} placeholder="如: EXPORT-2023-001" className="input-glass w-full text-2xl font-black p-3 rounded-xl" />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="block text-sm font-bold text-gray-600 mb-1">货物图片链接 (选填)</label>
+                                    <input name="image" value={formData.image} onChange={handleFormChange} onBlur={handleFormBlur} placeholder="https://..." className="input-glass w-full p-3 rounded-xl" />
+                                </div>
+                                {formData.image && <img src={formData.image} className="w-20 h-20 rounded-xl object-cover shadow-sm" />}
+                            </section>
 
-                                {/* 2. 货物数据 */}
-                                <section>
-                                    <h3 className="text-xl font-bold mb-3 border-b-2 border-[#2d2318] pb-1">2. 货物数据</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                                        <div><label className="block text-sm">件数</label><input type="number" name="qty" onBlur={handleBlur} onChange={handleChange} className="w-full p-2 border rounded bg-white/50" /></div>
-                                        <div><label className="block text-sm">毛重 (KG)</label><input type="number" name="gw" onBlur={handleBlur} onChange={handleChange} className="w-full p-2 border rounded bg-white/50" /></div>
-                                        <div><label className="block text-sm">体积 (CBM)</label><input type="number" name="cbm" onBlur={handleBlur} onChange={handleChange} className="w-full p-2 border rounded bg-white/50" /></div>
-                                        <div className="bg-[#2d2318] text-white p-2 rounded flex flex-col justify-center">
-                                            <span className="text-xs">计费重: {chargeableWeight} KG</span>
-                                            <span className="text-xs text-gray-300">(体积重: {volWeight})</span>
-                                        </div>
-                                    </div>
-                                    <div className="flex space-x-6 text-sm font-bold">
-                                        <label className="flex items-center"><input type="checkbox" name="taxRefund" onChange={handleChange} onBlur={handleBlur} className="mr-2" /> 需要退税</label>
-                                        <label className="flex items-center"><input type="checkbox" name="customs" onChange={handleChange} onBlur={handleBlur} className="mr-2" /> 需要报关</label>
-                                        <label className="flex items-center"><input type="checkbox" name="generalCargo" defaultChecked onChange={handleChange} onBlur={handleBlur} className="mr-2" /> 普货</label>
-                                    </div>
-                                </section>
-
-                                {/* 3. 应收费用 */}
-                                <section>
-                                    <h3 className="text-xl font-bold mb-3 border-b-2 border-[#2d2318] pb-1">3. 应收费用 (FOB条款)</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                                        <div><label className="block text-sm">单价</label><input type="number" name="arUnitPrice" onBlur={handleBlur} onChange={handleChange} className="w-full p-2 border rounded bg-white/50" /></div>
-                                        <div><label className="block text-sm">重量</label><input type="number" name="arWeight" onBlur={handleBlur} onChange={handleChange} className="w-full p-2 border rounded bg-white/50" /></div>
-                                        <div><label className="block text-sm">代理公司名称</label><input type="text" name="agencyName" onBlur={handleBlur} onChange={handleChange} className="w-full p-2 border rounded bg-white/50" /></div>
-                                        <div className="text-lg font-bold p-2">总运费: <span className="text-green-700">{arTotal}</span></div>
-                                    </div>
-                                </section>
-
-                                {/* 4. 应付成本 */}
-                                <section>
-                                    <h3 className="text-xl font-bold mb-3 border-b-2 border-[#2d2318] pb-1 flex justify-between">
-                                        4. 应付成本
-                                        <button 
-                                            onClick={() => setFormData(p => ({...p, apPaid: !p.apPaid}))}
-                                            className={`text-sm px-4 py-1 rounded text-white transition-colors ${formData.apPaid ? 'bg-gray-500' : 'bg-red-600'}`}
-                                        >
-                                            {formData.apPaid ? '已付清' : '未付清 (点击结清)'}
-                                        </button>
-                                    </h3>
-                                    <div className="mb-4">
-                                        <label className="mr-4 font-bold"><input type="radio" name="apType" value="1" checked={formData.apType === '1'} onChange={handleChange} className="mr-1"/> 代理报关 (含报关费)</label>
-                                        <label className="font-bold"><input type="radio" name="apType" value="2" checked={formData.apType === '2'} onChange={handleChange} className="mr-1"/> 无代理报关</label>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                                        <div><label className="block text-sm">总运费</label><input type="number" name="apTotalFreight" onBlur={handleBlur} onChange={handleChange} className="w-full p-2 border rounded bg-white/50" /></div>
-                                        {formData.apType === '2' && (
-                                            <div><label className="block text-sm">报关费</label><input type="number" name="apCustomsFee" onBlur={handleBlur} onChange={handleChange} className="w-full p-2 border rounded bg-white/50" /></div>
-                                        )}
-                                        <div><label className="block text-sm">提货费</label><input type="number" name="apPickupFee" onBlur={handleBlur} onChange={handleChange} className="w-full p-2 border rounded bg-white/50" /></div>
-                                        <div className="text-lg font-bold p-2">金额: <span className="text-red-600">{apTotal}</span></div>
-                                    </div>
-                                </section>
-
-                                {/* 5. 利润 */}
-                                <section>
-                                    <h3 className="text-xl font-bold mb-3 border-b-2 border-[#2d2318] pb-1">5. 利润分析</h3>
-                                    <div className="bg-[#2d2318] text-white p-4 rounded-lg text-2xl font-bold text-center shadow-inner">
-                                        当前利润: ¥ {profit}
-                                    </div>
-                                </section>
-
-                                {/* 6. 工厂FOB费用 */}
-                                <section>
-                                    <h3 className="text-xl font-bold mb-3 border-b-2 border-[#2d2318] pb-1">6. 工厂FOB费用</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div><label className="block text-sm">收款日期</label><input type="date" name="fobDate" onBlur={handleBlur} onChange={handleChange} className="w-full p-2 border rounded bg-white/50" /></div>
-                                        <div><label className="block text-sm">金额</label><input type="number" name="fobAmount" onBlur={handleBlur} onChange={handleChange} className="w-full p-2 border rounded bg-white/50" /></div>
-                                    </div>
-                                </section>
-                            </div>
-
-                            {/* 核心需求：历史痕迹保留区 */}
-                            <div className="mt-8">
-                                <h3 className="text-lg font-bold text-gray-600 mb-4">历史修改记录 (版本控制)</h3>
-                                <div className="space-y-4">
-                                    {history.slice(1).map((hist, index) => (
-                                        <div key={index} className="bg-gray-100/50 border border-gray-300 p-4 rounded text-gray-500 text-sm flex flex-col md:flex-row justify-between opacity-70">
-                                            <div>
-                                                <span className="font-bold mr-4">第 {hist.version} 版</span>
-                                                客户: {hist.client || '-'} | 计费重: {Math.max(hist.gw, hist.cbm*166.67) || 0} | 利润: {(hist.arUnitPrice * hist.arWeight) - (hist.apType === '1' ? (Number(hist.apTotalFreight) + Number(hist.apPickupFee)) : (Number(hist.apTotalFreight) + Number(hist.apCustomsFee) + Number(hist.apPickupFee)))}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                {/* 左列：业务数据 */}
+                                <div className="space-y-8">
+                                    <section className="glass-panel p-6 rounded-2xl relative overflow-hidden">
+                                        <div className="absolute top-0 left-0 w-2 h-full bg-[#2c2722]"></div>
+                                        <h3 className="font-black text-lg mb-4 flex items-center gap-2"><i data-lucide="user"></i> 1. 客户与航线</h3>
+                                        <div className="space-y-4">
+                                            <div><label className="text-sm text-gray-600">客户名称</label><input name="client" value={formData.client} onChange={handleFormChange} onBlur={handleFormBlur} className="input-glass w-full p-2 rounded-lg mt-1" /></div>
+                                            <div className="flex gap-4">
+                                                <div className="flex-1"><label className="text-sm text-gray-600">起运港 (POL)</label><input name="pol" value={formData.pol} onChange={handleFormChange} onBlur={handleFormBlur} className="input-glass w-full p-2 rounded-lg mt-1" /></div>
+                                                <div className="flex-1"><label className="text-sm text-gray-600">目的港 (POD)</label><input name="pod" value={formData.pod} onChange={handleFormChange} onBlur={handleFormBlur} className="input-glass w-full p-2 rounded-lg mt-1" /></div>
                                             </div>
-                                            <div className="text-xs mt-2 md:mt-0">{hist.timestamp}</div>
                                         </div>
-                                    ))}
-                                    {history.length <= 1 && <p className="text-gray-400 text-sm">暂无历史修改记录。改动数据后点击空白处即生成新版本。</p>}
+                                    </section>
+
+                                    <section className="glass-panel p-6 rounded-2xl relative overflow-hidden">
+                                        <div className="absolute top-0 left-0 w-2 h-full bg-blue-400"></div>
+                                        <h3 className="font-black text-lg mb-4 flex items-center gap-2"><i data-lucide="scale"></i> 2. 货物规格</h3>
+                                        <div className="grid grid-cols-3 gap-4 mb-4">
+                                            <div><label className="text-sm text-gray-600">件数</label><input type="number" name="qty" value={formData.qty} onChange={handleFormChange} onBlur={handleFormBlur} className="input-glass w-full p-2 rounded-lg mt-1" /></div>
+                                            <div><label className="text-sm text-gray-600">毛重(KG)</label><input type="number" name="gw" value={formData.gw} onChange={handleFormChange} onBlur={handleFormBlur} className="input-glass w-full p-2 rounded-lg mt-1" /></div>
+                                            <div><label className="text-sm text-gray-600">体积(CBM)</label><input type="number" name="cbm" value={formData.cbm} onChange={handleFormChange} onBlur={handleFormBlur} className="input-glass w-full p-2 rounded-lg mt-1" /></div>
+                                        </div>
+                                        <div className="bg-white/50 p-3 rounded-lg flex justify-between items-center border border-white">
+                                            <span className="text-sm text-gray-600">最终计费重</span>
+                                            <span className="font-black text-xl text-blue-600">{chargeableWeight} KG</span>
+                                        </div>
+                                        <div className="mt-4 flex gap-4 text-sm font-bold text-gray-700">
+                                            <label className="flex items-center gap-1 cursor-pointer"><input type="checkbox" name="taxRefund" checked={formData.taxRefund} onChange={handleFormChange} onBlur={handleFormBlur} /> 退税</label>
+                                            <label className="flex items-center gap-1 cursor-pointer"><input type="checkbox" name="customs" checked={formData.customs} onChange={handleFormChange} onBlur={handleFormBlur} /> 报关</label>
+                                            <label className="flex items-center gap-1 cursor-pointer"><input type="checkbox" name="generalCargo" checked={formData.generalCargo} onChange={handleFormChange} onBlur={handleFormBlur} /> 普货</label>
+                                        </div>
+                                    </section>
+
+                                    <section className="glass-panel p-6 rounded-2xl relative overflow-hidden">
+                                        <div className="absolute top-0 left-0 w-2 h-full bg-yellow-400"></div>
+                                        <h3 className="font-black text-lg mb-4 flex items-center gap-2"><i data-lucide="factory"></i> 6. 工厂FOB回款</h3>
+                                        <div className="flex gap-4">
+                                            <div className="flex-1"><label className="text-sm text-gray-600">收款日期</label><input type="date" name="fobDate" value={formData.fobDate} onChange={handleFormChange} onBlur={handleFormBlur} className="input-glass w-full p-2 rounded-lg mt-1" /></div>
+                                            <div className="flex-1"><label className="text-sm text-gray-600">FOB金额</label><input type="number" name="fobAmount" value={formData.fobAmount} onChange={handleFormChange} onBlur={handleFormBlur} className="input-glass w-full p-2 rounded-lg mt-1" /></div>
+                                        </div>
+                                    </section>
+                                </div>
+
+                                {/* 右列：财务数据 */}
+                                <div className="space-y-8">
+                                    <section className="glass-panel p-6 rounded-2xl relative overflow-hidden border-2 border-green-200">
+                                        <div className="absolute top-0 left-0 w-2 h-full bg-green-500"></div>
+                                        <h3 className="font-black text-lg mb-4 flex items-center gap-2 text-green-800"><i data-lucide="arrow-down-to-line"></i> 3. 应收费用 (FOB)</h3>
+                                        <div className="grid grid-cols-2 gap-4 mb-4">
+                                            <div><label className="text-sm text-gray-600">卖出单价</label><input type="number" name="arUnitPrice" value={formData.arUnitPrice} onChange={handleFormChange} onBlur={handleFormBlur} className="input-glass w-full p-2 rounded-lg mt-1 font-bold text-green-700" /></div>
+                                            <div><label className="text-sm text-gray-600 flex items-center gap-1"><i data-lucide="lock" className="w-3 h-3"></i> 同步计费重</label><input type="number" value={chargeableWeight} readOnly className="input-glass input-locked w-full p-2 rounded-lg mt-1" /></div>
+                                        </div>
+                                        <div><label className="text-sm text-gray-600">代理公司名称</label><input name="agencyName" value={formData.agencyName} onChange={handleFormChange} onBlur={handleFormBlur} className="input-glass w-full p-2 rounded-lg mt-1" /></div>
+                                        <div className="mt-4 pt-4 border-t border-green-200 flex justify-between items-center">
+                                            <span className="font-bold text-gray-600">应收合计</span>
+                                            <span className="text-2xl font-black text-green-600">{fmtMoney(arTotal)}</span>
+                                        </div>
+                                    </section>
+
+                                    <section className="glass-panel p-6 rounded-2xl relative overflow-hidden border-2 border-red-200">
+                                        <div className="absolute top-0 left-0 w-2 h-full bg-red-500"></div>
+                                        <div className="flex justify-between items-center mb-4">
+                                            <h3 className="font-black text-lg flex items-center gap-2 text-red-800"><i data-lucide="arrow-up-from-line"></i> 4. 应付成本</h3>
+                                            <button onClick={() => setFormData(p => ({...p, apPaid: !p.apPaid}))} className={`px-3 py-1 rounded-full text-xs font-bold transition ${formData.apPaid ? 'bg-green-500 text-white shadow-lg' : 'bg-gray-200 text-gray-600'}`}>
+                                                {formData.apPaid ? '✓ 已付清' : '点击标记付清'}
+                                            </button>
+                                        </div>
+
+                                        <div className="flex gap-4 mb-4 text-sm font-bold bg-white/40 p-2 rounded-lg">
+                                            <label className="flex items-center gap-1 cursor-pointer"><input type="radio" name="apType" value="1" checked={formData.apType==='1'} onChange={handleFormChange} /> 代理报关(含费)</label>
+                                            <label className="flex items-center gap-1 cursor-pointer"><input type="radio" name="apType" value="2" checked={formData.apType==='2'} onChange={handleFormChange} /> 无代理报关</label>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4 mb-4">
+                                            <div><label className="text-sm text-gray-600">买入单价</label><input type="number" name="apUnitPrice" value={formData.apUnitPrice} onChange={handleFormChange} onBlur={handleFormBlur} className="input-glass w-full p-2 rounded-lg mt-1 font-bold text-red-600" /></div>
+                                            <div><label className="text-sm text-gray-600 flex items-center gap-1"><i data-lucide="lock" className="w-3 h-3"></i> 总运费(系统算)</label><input type="number" value={apTotalFreight} readOnly className="input-glass input-locked w-full p-2 rounded-lg mt-1" /></div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            {formData.apType === '2' && <div><label className="text-sm text-gray-600">独立报关费</label><input type="number" name="apCustomsFee" value={formData.apCustomsFee} onChange={handleFormChange} onBlur={handleFormBlur} className="input-glass w-full p-2 rounded-lg mt-1" /></div>}
+                                            <div><label className="text-sm text-gray-600">提货费</label><input type="number" name="apPickupFee" value={formData.apPickupFee} onChange={handleFormChange} onBlur={handleFormBlur} className="input-glass w-full p-2 rounded-lg mt-1" /></div>
+                                        </div>
+
+                                        <div className="mt-4 pt-4 border-t border-red-200 flex justify-between items-center">
+                                            <span className="font-bold text-gray-600">应付合计</span>
+                                            <span className="text-2xl font-black text-red-600">{fmtMoney(apTotal)}</span>
+                                        </div>
+                                    </section>
+
+                                    {/* 利润大字报 */}
+                                    <div className="bg-[#2c2722] text-white p-6 rounded-2xl shadow-2xl flex justify-between items-center transform hover:scale-[1.02] transition">
+                                        <div>
+                                            <h3 className="text-sm text-gray-400 font-bold mb-1"><i data-lucide="pie-chart" className="inline w-4 h-4"></i> 5. 单票利润核算</h3>
+                                            <div className="text-xs text-gray-500">应收 {arTotal} - 应付 {apTotal}</div>
+                                        </div>
+                                        <div className="text-4xl font-black text-[#d4fc79]">{fmtMoney(profit)}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 底部操作台 & 历史版本痕迹 */}
+                            <div className="glass-panel p-6 rounded-2xl space-y-6">
+                                <div className="flex gap-4 items-center justify-end border-b border-gray-300/50 pb-6">
+                                    <button onClick={handleExportExcel} className="px-6 py-3 rounded-xl font-bold bg-white/80 hover:bg-white text-[#2c2722] border border-[#2c2722]/20 flex items-center gap-2 transition">
+                                        <i data-lucide="file-spreadsheet" className="w-5 h-5"></i> 导出专业版Excel
+                                    </button>
+                                    <button onClick={saveAndReturn} className="px-8 py-3 rounded-xl font-bold bg-[#2c2722] text-white hover:bg-black flex items-center gap-2 shadow-xl transition">
+                                        <i data-lucide="save" className="w-5 h-5"></i> 保存为新版 & 退出
+                                    </button>
+                                </div>
+
+                                <div>
+                                    <h4 className="text-sm font-bold text-gray-500 mb-4 flex items-center gap-2"><i data-lucide="history" className="w-4 h-4"></i> 历史修改痕迹</h4>
+                                    <div className="flex gap-3 overflow-x-auto pb-2">
+                                        {history.slice(1).map((h, i) => (
+                                            <div key={i} className="min-w-[200px] bg-white/30 border border-white p-3 rounded-xl text-xs text-gray-600 shadow-sm flex-shrink-0">
+                                                <div className="font-black text-[#2c2722] mb-1">第 {h.version} 版</div>
+                                                <div>时间: {h.timestamp}</div>
+                                                <div>计重: {Math.max(h.gw || 0, (h.cbm || 0)*166.67).toFixed(1)}</div>
+                                            </div>
+                                        ))}
+                                        {history.length <= 1 && <span className="text-sm text-gray-400 italic">改动任意数据后，点击空白处即生成操作痕迹...</span>}
+                                    </div>
                                 </div>
                             </div>
 
                         </div>
                     )}
-                </div>
-            );
-        }
+                </main>
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+                {/* 治愈系：手账胶带便利贴 */}
+                <div className="fixed bottom-8 right-8 z-50">
+                    <div className="sticky-note p-4 w-48 text-center border border-yellow-200/50">
+                        <i data-lucide="coffee" className="w-4 h-4 text-yellow-600 mx-auto mb-2 opacity-50"></i>
+                        <p className="text-[#2c2722] font-medium text-sm leading-relaxed tracking-wide">
+                            {QUOTES[quoteIndex]}
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+</script>
 </body>
 </html>
