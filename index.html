@@ -92,12 +92,18 @@
 <script type="text/babel">
     const { useState, useEffect, useMemo } = React;
 
+    // --- 在这里设置你的员工账号（固定账号，请修改密码）---
+    const validUsers = {
+        "admin": { password: "123456", name: "hayley" },
+        "user1": { password: "123456", name: "eric" },
+        "user2": { password: "123456", name: "wendy" }
+    };
+    // -------------------------------------------------
+
     // --- 初始化云开发 ---
     const app = cloudbase.init({
         env: "harmony-dev-6g2lhfsb3507b9c4",
-        region: "ap-shanghai",
-        accessKey: "eyJhbGciOiJSUzI1NiIsImtpZCI6IjlkMWRjMzFlLWI0ZDAtNDQ4Yi1hNzZmLWIwY2M2M2Q4MTQ5OCJ9.eyJpc3MiOiJodHRwczovL2hhcm1vbnktZGV2LTZnMmxoZnNiMzUwN2I5YzQuYXAtc2hhbmdoYWkudGNiLWFwaS50ZW5jZW50Y2xvdWRhcGkuY29tIiwic3ViIjoiYW5vbiIsImF1ZCI6Imhhcm1vbnktZGV2LTZnMmxoZnNiMzUwN2I5YzQiLCJleHAiOjQwNzkzMTU0NzMsImlhdCI6MTc3NTYzMjI3Mywibm9uY2UiOiJkSTFlVlRoUVRoNkhxdTk0UFFIU1pRIiwiYXRfaGFzaCI6ImRJMWVWVGhRVGg2SHF1OTRQUUhTWlEiLCJuYW1lIjoiQW5vbnltb3VzIiwic2NvcGUiOiJhbm9ueW1vdXMiLCJwcm9qZWN0X2lkIjoiaGFybW9ueS1kZXYtNmcybGhmc2IzNTA3YjljNCIsIm1ldGEiOnsicGxhdGZvcm0iOiJQdWJsaXNoYWJsZUtleSJ9LCJ1c2VyX3R5cGUiOiIiLCJjbGllbnRfdHlwZSI6ImNsaWVudF91c2VyIiwiaXNfc3lzdGVtX2FkbWluIjpmYWxzZX0.KOxXzcQeY9OpSgU4eFhavLV_p6ZQMsXD_CVlSTbUfQ7WgM97IGnBwbza6P1KLlI7lXRuhzh8RhPttuFn4hUVl3GSOf9Lg5rLGOyV7JEhVQ1wBRrEAret0zbHWXeTU69nwI11k2wyRMhxJa3srXUxwxTFxtJeZ_5y4fsy9mizQLxmpLVo3lPiyO1qPoob5ndmpz0_HAYYzrWCfxENWYoK1A63mL2HOpzBWqSVv9KgZYjLdIjjZxhqO3-m7HjYz8cWJ60HyWPaAYhZuq98hkeCk7pgWACSuXfPZphUy4d6zezhGWyS_D3P0ElCu5HuR9ClTOanYkzWnt6rEEo8iq2_vQ",
-        auth: { detectSessionInUrl: true }
+        region: "ap-shanghai"
     });
     const auth = app.auth();
     const db = app.database();
@@ -118,7 +124,7 @@
         const [isLoggedIn, setIsLoggedIn] = useState(false);
         const [currentUser, setCurrentUser] = useState(null);
         const [loginForm, setLoginForm] = useState({ username: '', password: '' });
-        const [showRegister, setShowRegister] = useState(false);
+        const [loginError, setLoginError] = useState('');
 
         // 路由状态：'list' = 共享看板, 'edit' = 填报/编辑页
         const [currentView, setCurrentView] = useState('list');
@@ -131,33 +137,39 @@
         const [formData, setFormData] = useState(getInitialForm());
         const [history, setHistory] = useState([]);
 
-        // 检查登录状态
-        useEffect(() => {
-            checkLoginStatus();
-        }, []);
-
-        const checkLoginStatus = async () => {
+        // 加载云端货单数据
+        const loadAllShipments = async () => {
             try {
-                const loginState = await auth.getLoginState();
-                if (loginState) {
-                    setIsLoggedIn(true);
-                    const userResult = await auth.getUser();
-                    setCurrentUser(userResult.data.user);
-                    loadAllShipments();
-                }
+                const result = await db.collection('shipments').get();
+                setShipments(result.data);
             } catch (err) {
-                console.log('未登录');
+                console.error('加载货单失败：', err);
             }
-            lucide.createIcons();
         };
 
-        // 初始化时加载缓存
+        // 初始化：匿名登录 + 加载数据
         useEffect(() => {
-            if (isLoggedIn) {
-                loadAllShipments();
-            }
-            lucide.createIcons(); // 渲染图标
-        }, [isLoggedIn]);
+            const init = async () => {
+                try {
+                    // 1. 尝试获取现有登录状态
+                    let loginState = await auth.getLoginState();
+                    if (!loginState) {
+                        // 2. 如果没有，就进行匿名登录
+                        await auth.signInAnonymously();
+                        loginState = await auth.getLoginState();
+                        console.log("匿名登录成功，用户ID:", loginState.user.uid);
+                    } else {
+                        console.log("已有登录状态，用户ID:", loginState.user.uid);
+                    }
+                    // 3. 匿名登录成功后加载图标
+                    lucide.createIcons();
+                } catch (error) {
+                    console.error("初始化失败:", error);
+                    setLoginError("初始化失败，请检查网络或稍后重试。");
+                }
+            };
+            init();
+        }, []);
 
         useEffect(() => {
             lucide.createIcons();
@@ -198,78 +210,25 @@
         }, [chargeableWeight, apTotalFreight]);
 
         // --- 操作函数 ---
-        // 登录函数
-        const handleLogin = async () => {
-            try {
-                // 使用正确的 CloudBase v2 认证方法
-                const result = await auth.signInWithPassword({
-                    username: loginForm.username,
-                    password: loginForm.password
-                });
-                console.log('登录成功', result);
+        // 员工登录验证（从固定账号中匹配）
+        const handleLogin = () => {
+            const user = validUsers[loginForm.username];
+            if (user && user.password === loginForm.password) {
                 setIsLoggedIn(true);
-                const userResult = await auth.getUser();
-                setCurrentUser(userResult.data.user);
-                alert('登录成功！');
+                setCurrentUser({ username: loginForm.username, name: user.name });
+                setLoginError('');
+                alert(`欢迎回来，${user.name}！`);
                 loadAllShipments();
-            } catch (err) {
-                console.error('登录失败详情：', err);
-                alert('登录失败：' + err.message);
-            }
-        };
-
-        // 注册函数
-        const handleRegister = async () => {
-            if (!loginForm.username || !loginForm.password) {
-                alert('用户名和密码不能为空！');
-                return;
-            }
-            
-            try {
-                // 调用云函数注册用户
-                const result = await app.callFunction({
-                    name: 'registerUser',
-                    data: {
-                        username: loginForm.username,
-                        password: loginForm.password,
-                        nickname: loginForm.username
-                    }
-                });
-                
-                if (result.result.success) {
-                    alert('注册成功！现在可以使用该账号登录了。');
-                    setShowRegister(false);
-                    setLoginForm({ username: '', password: '' });
-                } else {
-                    alert('注册失败：' + result.result.message);
-                }
-            } catch (err) {
-                console.error('注册失败:', err);
-                alert('注册失败：' + err.message);
+            } else {
+                setLoginError("用户名或密码错误");
             }
         };
 
         // 登出函数
-        const handleLogout = async () => {
-            try {
-                await auth.signOut();
-                setIsLoggedIn(false);
-                setCurrentUser(null);
-                setShipments([]);
-                alert('已退出登录');
-            } catch (err) {
-                alert('登出失败：' + err.message);
-            }
-        };
-
-        // 从云端加载所有货单
-        const loadAllShipments = async () => {
-            try {
-                const result = await db.collection('shipments').get();
-                setShipments(result.data);
-            } catch (err) {
-                console.error('加载货单失败：', err);
-            }
+        const handleLogout = () => {
+            setIsLoggedIn(false);
+            setCurrentUser(null);
+            setLoginForm({ username: '', password: '' });
         };
 
         function getInitialForm() {
@@ -355,7 +314,7 @@
                 currentData: { ...formData, chargeableWeight, arTotal, apTotal, profit },
                 history: history,
                 updatedAt: new Date().toISOString(),
-                createdBy: currentUser?.user_metadata?.username || currentUser?.user_metadata?.nickName || 'unknown'
+                createdBy: currentUser?.name || currentUser?.username || 'unknown'
             };
 
             try {
@@ -399,91 +358,39 @@
                             <h1 className="text-3xl font-black text-[#2c2722] mb-2">SyncFreight</h1>
                             <p className="text-gray-600">物流协同管理系统</p>
                         </div>
-                        
-                        {!showRegister ? (
-                            <>
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-600 mb-1">用户名</label>
-                                        <input
-                                            type="text"
-                                            value={loginForm.username}
-                                            onChange={(e) => setLoginForm({...loginForm, username: e.target.value})}
-                                            className="input-glass w-full p-3 rounded-xl"
-                                            placeholder="请输入用户名"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-600 mb-1">密码</label>
-                                        <input
-                                            type="password"
-                                            value={loginForm.password}
-                                            onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
-                                            onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
-                                            className="input-glass w-full p-3 rounded-xl"
-                                            placeholder="请输入密码"
-                                        />
-                                    </div>
-                                    <button
-                                        onClick={handleLogin}
-                                        className="w-full px-6 py-3 bg-[#2c2722] text-white rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition"
-                                    >
-                                        登录
-                                    </button>
-                                </div>
-                                <div className="mt-6 text-center">
-                                    <p className="text-sm text-gray-500 mb-2">还没有账号？</p>
-                                    <button
-                                        onClick={() => setShowRegister(true)}
-                                        className="text-sm font-bold text-[#2c2722] hover:underline"
-                                    >
-                                        立即注册
-                                    </button>
-                                </div>
-                            </>
-                        ) : (
-                            <>
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-600 mb-1">用户名</label>
-                                        <input
-                                            type="text"
-                                            value={loginForm.username}
-                                            onChange={(e) => setLoginForm({...loginForm, username: e.target.value})}
-                                            className="input-glass w-full p-3 rounded-xl"
-                                            placeholder="请输入用户名"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-600 mb-1">密码</label>
-                                        <input
-                                            type="password"
-                                            value={loginForm.password}
-                                            onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
-                                            className="input-glass w-full p-3 rounded-xl"
-                                            placeholder="请输入密码"
-                                        />
-                                    </div>
-                                    <button
-                                        onClick={handleRegister}
-                                        className="w-full px-6 py-3 bg-[#2c2722] text-white rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition"
-                                    >
-                                        注册
-                                    </button>
-                                </div>
-                                <div className="mt-6 text-center">
-                                    <button
-                                        onClick={() => {
-                                            setShowRegister(false);
-                                            setLoginForm({ username: '', password: '' });
-                                        }}
-                                        className="text-sm font-bold text-gray-600 hover:text-[#2c2722]"
-                                    >
-                                        ← 返回登录
-                                    </button>
-                                </div>
-                            </>
-                        )}
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-bold text-gray-600 mb-1">用户名</label>
+                                <input
+                                    type="text"
+                                    value={loginForm.username}
+                                    onChange={(e) => setLoginForm({...loginForm, username: e.target.value})}
+                                    className="input-glass w-full p-3 rounded-xl"
+                                    placeholder="请输入用户名"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-600 mb-1">密码</label>
+                                <input
+                                    type="password"
+                                    value={loginForm.password}
+                                    onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
+                                    onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+                                    className="input-glass w-full p-3 rounded-xl"
+                                    placeholder="请输入密码"
+                                />
+                            </div>
+                            {loginError && <p className="text-red-500 text-sm text-center">{loginError}</p>}
+                            <button
+                                onClick={handleLogin}
+                                className="w-full px-6 py-3 bg-[#2c2722] text-white rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition"
+                            >
+                                登录
+                            </button>
+                        </div>
+                        <div className="mt-6 text-center text-xs text-gray-500">
+                            首次使用请联系管理员获取账号
+                        </div>
                     </div>
                 </div>
             );
@@ -497,7 +404,7 @@
                     <div className="flex items-center gap-3">
                         <i data-lucide="package-search" className="text-[#2c2722]"></i>
                         <span className="font-bold text-xl tracking-wide">SyncFreight 物流协同</span>
-                        <span className="text-xs text-gray-500">| {currentUser?.user_metadata?.username || currentUser?.user_metadata?.nickName || '用户'}</span>
+                        <span className="text-xs text-gray-500">| {currentUser?.name || currentUser?.username || '用户'}</span>
                     </div>
                     {currentView === 'edit' ? (
                         <div className="flex items-center gap-4">
