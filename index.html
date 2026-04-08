@@ -95,7 +95,9 @@
     // --- 初始化云开发 ---
     const app = cloudbase.init({
         env: "harmony-dev-6g2lhfsb3507b9c4",
-        region: "ap-shanghai"
+        region: "ap-shanghai",
+        accessKey: "eyJhbGciOiJSUzI1NiIsImtpZCI6IjlkMWRjMzFlLWI0ZDAtNDQ4Yi1hNzZmLWIwY2M2M2Q4MTQ5OCJ9.eyJpc3MiOiJodHRwczovL2hhcm1vbnktZGV2LTZnMmxoZnNiMzUwN2I5YzQuYXAtc2hhbmdoYWkudGNiLWFwaS50ZW5jZW50Y2xvdWRhcGkuY29tIiwic3ViIjoiYW5vbiIsImF1ZCI6Imhhcm1vbnktZGV2LTZnMmxoZnNiMzUwN2I5YzQiLCJleHAiOjQwNzkzMTU0NzMsImlhdCI6MTc3NTYzMjI3Mywibm9uY2UiOiJkSTFlVlRoUVRoNkhxdTk0UFFIU1pRIiwiYXRfaGFzaCI6ImRJMWVWVGhRVGg2SHF1OTRQUUhTWlEiLCJuYW1lIjoiQW5vbnltb3VzIiwic2NvcGUiOiJhbm9ueW1vdXMiLCJwcm9qZWN0X2lkIjoiaGFybW9ueS1kZXYtNmcybGhmc2IzNTA3YjljNCIsIm1ldGEiOnsicGxhdGZvcm0iOiJQdWJsaXNoYWJsZUtleSJ9LCJ1c2VyX3R5cGUiOiIiLCJjbGllbnRfdHlwZSI6ImNsaWVudF91c2VyIiwiaXNfc3lzdGVtX2FkbWluIjpmYWxzZX0.KOxXzcQeY9OpSgU4eFhavLV_p6ZQMsXD_CVlSTbUfQ7WgM97IGnBwbza6P1KLlI7lXRuhzh8RhPttuFn4hUVl3GSOf9Lg5rLGOyV7JEhVQ1wBRrEAret0zbHWXeTU69nwI11k2wyRMhxJa3srXUxwxTFxtJeZ_5y4fsy9mizQLxmpLVo3lPiyO1qPoob5ndmpz0_HAYYzrWCfxENWYoK1A63mL2HOpzBWqSVv9KgZYjLdIjjZxhqO3-m7HjYz8cWJ60HyWPaAYhZuq98hkeCk7pgWACSuXfPZphUy4d6zezhGWyS_D3P0ElCu5HuR9ClTOanYkzWnt6rEEo8iq2_vQ",
+        auth: { detectSessionInUrl: true }
     });
     const auth = app.auth();
     const db = app.database();
@@ -116,6 +118,7 @@
         const [isLoggedIn, setIsLoggedIn] = useState(false);
         const [currentUser, setCurrentUser] = useState(null);
         const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+        const [showRegister, setShowRegister] = useState(false);
 
         // 路由状态：'list' = 共享看板, 'edit' = 填报/编辑页
         const [currentView, setCurrentView] = useState('list');
@@ -198,17 +201,51 @@
         // 登录函数
         const handleLogin = async () => {
             try {
-                await auth.signInWithUsernameAndPassword(
-                    loginForm.username,
-                    loginForm.password
-                );
+                // 使用正确的 CloudBase v2 认证方法
+                const result = await auth.signInWithPassword({
+                    username: loginForm.username,
+                    password: loginForm.password
+                });
+                console.log('登录成功', result);
                 setIsLoggedIn(true);
                 const userResult = await auth.getUser();
                 setCurrentUser(userResult.data.user);
                 alert('登录成功！');
                 loadAllShipments();
             } catch (err) {
+                console.error('登录失败详情：', err);
                 alert('登录失败：' + err.message);
+            }
+        };
+
+        // 注册函数
+        const handleRegister = async () => {
+            if (!loginForm.username || !loginForm.password) {
+                alert('用户名和密码不能为空！');
+                return;
+            }
+            
+            try {
+                // 调用云函数注册用户
+                const result = await app.callFunction({
+                    name: 'registerUser',
+                    data: {
+                        username: loginForm.username,
+                        password: loginForm.password,
+                        nickname: loginForm.username
+                    }
+                });
+                
+                if (result.result.success) {
+                    alert('注册成功！现在可以使用该账号登录了。');
+                    setShowRegister(false);
+                    setLoginForm({ username: '', password: '' });
+                } else {
+                    alert('注册失败：' + result.result.message);
+                }
+            } catch (err) {
+                console.error('注册失败:', err);
+                alert('注册失败：' + err.message);
             }
         };
 
@@ -362,38 +399,91 @@
                             <h1 className="text-3xl font-black text-[#2c2722] mb-2">SyncFreight</h1>
                             <p className="text-gray-600">物流协同管理系统</p>
                         </div>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-bold text-gray-600 mb-1">用户名</label>
-                                <input
-                                    type="text"
-                                    value={loginForm.username}
-                                    onChange={(e) => setLoginForm({...loginForm, username: e.target.value})}
-                                    className="input-glass w-full p-3 rounded-xl"
-                                    placeholder="请输入用户名"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-bold text-gray-600 mb-1">密码</label>
-                                <input
-                                    type="password"
-                                    value={loginForm.password}
-                                    onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
-                                    onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
-                                    className="input-glass w-full p-3 rounded-xl"
-                                    placeholder="请输入密码"
-                                />
-                            </div>
-                            <button
-                                onClick={handleLogin}
-                                className="w-full px-6 py-3 bg-[#2c2722] text-white rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition"
-                            >
-                                登录
-                            </button>
-                        </div>
-                        <div className="mt-6 text-center text-sm text-gray-500">
-                            <p>首次使用请联系管理员创建账号</p>
-                        </div>
+                        
+                        {!showRegister ? (
+                            <>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-600 mb-1">用户名</label>
+                                        <input
+                                            type="text"
+                                            value={loginForm.username}
+                                            onChange={(e) => setLoginForm({...loginForm, username: e.target.value})}
+                                            className="input-glass w-full p-3 rounded-xl"
+                                            placeholder="请输入用户名"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-600 mb-1">密码</label>
+                                        <input
+                                            type="password"
+                                            value={loginForm.password}
+                                            onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
+                                            onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+                                            className="input-glass w-full p-3 rounded-xl"
+                                            placeholder="请输入密码"
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={handleLogin}
+                                        className="w-full px-6 py-3 bg-[#2c2722] text-white rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition"
+                                    >
+                                        登录
+                                    </button>
+                                </div>
+                                <div className="mt-6 text-center">
+                                    <p className="text-sm text-gray-500 mb-2">还没有账号？</p>
+                                    <button
+                                        onClick={() => setShowRegister(true)}
+                                        className="text-sm font-bold text-[#2c2722] hover:underline"
+                                    >
+                                        立即注册
+                                    </button>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-600 mb-1">用户名</label>
+                                        <input
+                                            type="text"
+                                            value={loginForm.username}
+                                            onChange={(e) => setLoginForm({...loginForm, username: e.target.value})}
+                                            className="input-glass w-full p-3 rounded-xl"
+                                            placeholder="请输入用户名"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-600 mb-1">密码</label>
+                                        <input
+                                            type="password"
+                                            value={loginForm.password}
+                                            onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
+                                            className="input-glass w-full p-3 rounded-xl"
+                                            placeholder="请输入密码"
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={handleRegister}
+                                        className="w-full px-6 py-3 bg-[#2c2722] text-white rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition"
+                                    >
+                                        注册
+                                    </button>
+                                </div>
+                                <div className="mt-6 text-center">
+                                    <button
+                                        onClick={() => {
+                                            setShowRegister(false);
+                                            setLoginForm({ username: '', password: '' });
+                                        }}
+                                        className="text-sm font-bold text-gray-600 hover:text-[#2c2722]"
+                                    >
+                                        ← 返回登录
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             );
