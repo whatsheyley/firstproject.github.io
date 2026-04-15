@@ -449,34 +449,37 @@
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {shipments.map(item => (
+                                    {shipments.map(item => {
+                                        const data = item.currentData || {};
+                                        return (
                                         <div key={item._id} onClick={() => startEdit(item)} className="glass-panel rounded-2xl p-6 cursor-pointer hover:shadow-xl hover:bg-white/60 transition group relative">
                                             <button onClick={(e) => deleteShipment(item._id, e)} className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition">
                                                 <i data-lucide="trash-2" className="w-5 h-5"></i>
                                             </button>
                                             <div className="flex items-center gap-3 mb-4">
-                                                {item.currentData.image ?
-                                                    <img src={item.currentData.image} className="w-12 h-12 rounded-lg object-cover border-2 border-white shadow-sm" /> :
+                                                {data.image ?
+                                                    <img src={data.image} className="w-12 h-12 rounded-lg object-cover border-2 border-white shadow-sm" /> :
                                                     <div className="w-12 h-12 rounded-lg bg-gray-200/50 flex items-center justify-center"><i data-lucide="box" className="text-gray-400"></i></div>
                                                 }
                                                 <div>
-                                                    <h3 className="font-black text-lg text-[#2c2722]">{item.currentData.jobId || '无单号'}</h3>
-                                                    <p className="text-xs text-gray-500 font-medium">更新于 {new Date(item.updatedAt).toLocaleDateString()}</p>
+                                                    <h3 className="font-black text-lg text-[#2c2722]">{data.jobId || '无单号'}</h3>
+                                                    <p className="text-xs text-gray-500 font-medium">更新于 {item.updatedAt ? new Date(item.updatedAt).toLocaleDateString() : '-'}</p>
                                                 </div>
                                             </div>
                                             <div className="space-y-2 text-sm">
-                                                <div className="flex justify-between"><span className="text-gray-500">客户</span><span className="font-bold">{item.currentData.client || '-'}</span></div>
-                                                <div className="flex justify-between"><span className="text-gray-500">航线</span><span className="font-bold">{item.currentData.pol} ✈ {item.currentData.pod}</span></div>
-                                                <div className="flex justify-between"><span className="text-gray-500">计费重</span><span className="font-bold">{item.currentData.chargeableWeight} KG</span></div>
+                                                <div className="flex justify-between"><span className="text-gray-500">客户</span><span className="font-bold">{data.client || '-'}</span></div>
+                                                <div className="flex justify-between"><span className="text-gray-500">航线</span><span className="font-bold">{data.pol || '-'} ✈ {data.pod || '-'}</span></div>
+                                                <div className="flex justify-between"><span className="text-gray-500">计费重</span><span className="font-bold">{data.chargeableWeight || 0} KG</span></div>
                                             </div>
                                             <div className="mt-4 pt-4 border-t border-gray-300/50 flex justify-between items-center">
-                                                <span className={`text-xs px-2 py-1 rounded-md font-bold ${item.currentData.apPaid ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
-                                                    {item.currentData.apPaid ? '款项已清' : '未付清'}
+                                                <span className={`text-xs px-2 py-1 rounded-md font-bold ${data.apPaid ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                                                    {data.apPaid ? '款项已清' : '未付清'}
                                                 </span>
-                                                <span className="text-lg font-black text-[#2c2722]">{fmtMoney(item.currentData.profit)}</span>
+                                                <span className="text-lg font-black text-[#2c2722]">{fmtMoney(data.profit || 0)}</span>
                                             </div>
                                         </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
