@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="description" content="玲子的生日厨房。一起来做蛋糕。">
+<title>玲子的生日厨房</title>
+<style>
+:root{color-scheme:light;--ink:#39211f;--red:#ac322c;--cream:#fff5df;--muted:#714734;--line:#e2bd98;--paper:#fff9e9;font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;background:#f6dec2;color:var(--ink)}
+*{box-sizing:border-box}body{margin:0;min-height:100svh;background:radial-gradient(ellipse at 50% 0,#fff4d8,#f0c6a5 90%)}button{font:inherit;cursor:pointer;touch-action:manipulation}button:focus-visible{outline:3px solid #643d92;outline-offset:4px}button[disabled]{cursor:wait;opacity:.6}[hidden]{display:none!important}
+.kitchen{width:min(100% - 36px,800px);margin:auto;padding:20px 0 24px}.toolbar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}.brand{font-size:1rem;font-weight:820;letter-spacing:.06em}.brand span{color:var(--red);margin-right:4px}.utilities{display:flex;gap:6px}.quiet,.bag{min-height:42px;border:1px solid #bc8e71;border-radius:8px;background:#fff3db;color:var(--ink);padding:6px 10px;font-size:.88rem;white-space:nowrap}.bag{background:#a62f30;color:#fff6e3;border-color:#872529}.bag span{display:inline-grid;place-items:center;min-width:1.3em;background:#ffe3ad;color:#752321;border-radius:50%;margin-left:4px;font-weight:800}.bag.pop{animation:bag-pop .5s ease}
+.steps{display:flex;justify-content:space-between;gap:4px;font-size:.85rem;font-weight:650;margin:0 0 9px;color:#755340}.steps span{flex:1;text-align:center;padding:5px 1px;border-bottom:2px solid #d5aa8b}.steps .active{color:#8f2924;border-color:#ac322c}.steps .done{border-color:#a2634a}
+.board{position:relative;background:#e7aa74;border:2px solid #754738;border-radius:16px;overflow:hidden;box-shadow:0 8px 0 #b88566,0 20px 36px #8f4e2a32;isolation:isolate}.board canvas{display:block;width:100%;max-height:60svh;aspect-ratio:720/570;object-fit:fill;touch-action:none;user-select:none}.intro{position:absolute;inset:0;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;padding:6%;pointer-events:none;background:linear-gradient(90deg,#fff4dbd9,#fff0d24d 46%,transparent 67%)}.intro h1{font-family:"KaiTi","STKaiti","Songti SC",serif;font-size:clamp(2.8rem,8.1vw,5.6rem);line-height:.99;letter-spacing:-.095em;margin:.12em 0 .36em;color:#832b24;text-shadow:2px 2px #fff1d4}.intro-star{font-size:clamp(1.15rem,4vw,2rem);color:#9c4025}.intro button{pointer-events:auto}.primary,.secondary,.choice{min-height:44px;padding:8px 16px;border-radius:8px;border:1px solid #89332b;color:#fff9e9;background:var(--red);font-weight:750;box-shadow:0 2px 0 #742620}.secondary,.choice{background:#fff3dc;color:var(--ink);border-color:#c29170;box-shadow:none}.choice[aria-pressed=true]{background:#f3c4a9;border-color:#8f332b}.primary:active,.secondary:active,.choice:active{transform:translateY(1px)}
+.work{margin-top:19px}.instruction h2{margin:0;font-size:1.35rem;line-height:1.25}.instruction p{margin:5px 0 10px;color:var(--muted);line-height:1.45;font-size:.96rem;min-height:1.4em}.choices,.actions{display:flex;gap:7px;flex-wrap:wrap}.choices:empty,.actions:empty{display:none}.choices:not(:empty)+.actions:not(:empty){margin-top:9px}.choice{padding:7px 11px;font-size:.9rem}.ticket{position:absolute;top:3%;right:3%;padding:7px 13px;background:#ffe5aa;color:#6d3925;border:1px dashed #91563c;border-radius:4px;font-size:.84rem}.envelope{position:absolute;right:6%;bottom:11%;transform:rotate(7deg)}.envelope button{border:2px solid #ad5a46;border-radius:8px;color:#7c3027;background:linear-gradient(155deg,#f9ddad 48%,#edc18b 49%,#fff1ce 53%);min-width:105px;padding:13px 12px;box-shadow:4px 6px 0 #73452f52;font-weight:800}.envelope span{display:block;color:var(--red)}
+.paper{width:min(90vw,430px);max-height:80svh;overflow:auto;border:1px solid #b47a53;border-radius:15px;padding:22px 25px 24px;text-align:center;color:var(--ink);background:var(--paper);box-shadow:0 18px 80px #592b2d57}.paper::backdrop{background:#41231975}.paper h2{margin:3px 0 12px;font-size:1.06rem;color:#70452c}.paper-mark{color:var(--red);font-size:1.5rem}.paper p{margin:0 0 16px;line-height:1.6;white-space:pre-wrap}.paper .wish{font-family:"KaiTi","STKaiti","Songti SC",serif;font-weight:bold;font-size:clamp(1.55rem,5.5vw,2.1rem)}.paper ul{text-align:left;padding-left:20px;line-height:1.65}.paper li{margin:10px 0}.paper small{display:block;color:#754a38}.paper.folding{animation:fold .33s both}.paper .letter{text-align:left;font-size:1.05rem}
+@keyframes fold{to{opacity:0;scale:.45;translate:80px -100px;rotate:15deg}}@keyframes bag-pop{45%{transform:rotate(8deg) scale(1.12)}}
+@media(max-width:520px){.kitchen{width:calc(100% - 22px);padding:12px 0 max(18px,env(safe-area-inset-bottom))}.brand{font-size:.87rem;letter-spacing:0}.quiet,.bag{padding-inline:7px}.board{border-radius:12px}.board canvas{max-height:55svh;aspect-ratio:720/630}.intro h1{font-size:clamp(2.2rem,9vw,3.1rem)}.intro{padding-left:6%}.work{margin-top:16px}.instruction h2{font-size:1.22rem}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+:root{--ink:#29394d;--red:#a93654;--cream:#f8f4ea;--muted:#506176;--line:#b9c9d9;--paper:#fff9ee;background:#dce7f1}
+body{background:radial-gradient(ellipse at 54% 8%,#f5f8fa,#dce7f1 78%)}
+.toolbar{margin-bottom:16px}.brand{font-family:"Songti SC","SimSun",serif;font-weight:700}
+.quiet,.secondary,.choice{background:#f5f8fc;border-color:#aabed1;color:var(--ink)}
+.bag,.primary{background:#a93654;border-color:#8b2e48;box-shadow:0 2px 0 #712039}
+.bag span{background:#fff1f1;color:#79243e}.choice[aria-pressed=true]{background:#f7dfe7;border-color:#ad4863}
+.steps{color:#506176}.steps span{border-color:#bfcfdd}.steps .active{color:#9a2c4c;border-color:#a93654}.steps .done{border-color:#667e96}
+.board{border:1px solid #a3b6cb;background:#a4b8cd;box-shadow:0 10px 26px #2e496629;border-radius:9px}
+.intro{overflow:hidden;background:linear-gradient(117deg,#202a49 0 34%,#304569 58%,#30456900 76%);padding:7%}
+.intro::before{content:"";position:absolute;inset:0;background:#a93654;clip-path:polygon(0 0,44% 0,0 26%);opacity:.9;animation:curtain .9s ease-out both}
+.intro h1,.intro button,.intro-star{z-index:1}.intro h1{color:#fff9ee;text-shadow:none;letter-spacing:-.035em;font:700 clamp(2.3rem,7vw,4.55rem)/1.13 "Songti SC","SimSun",serif;animation:arrive .65s .17s both}
+.intro-star{color:#f3b974}.paper{border-color:#aabed1;box-shadow:0 18px 65px #152c5652}.paper::backdrop{background:#1d2e49b5}.paper h2,.paper small{color:#52677e}.paper[open]{animation:arrive .34s both}.paper.folding{animation:fold .34s both}.paper .wish{font-family:"Songti SC","SimSun",serif}
+.envelope button{border-color:#ae526b;color:#8b2949;background:linear-gradient(155deg,#f1dce4 48%,#d6a7b9 49%,#faf2eb 53%);box-shadow:4px 6px 0 #344c6952}
+.board.candle canvas{cursor:crosshair}.ticket{background:#fff1c8;color:#634625}.hint-note{font-size:.84rem;color:#506176}
+.board.transition::after{content:"";pointer-events:none;position:absolute;inset:-1px;background:#334a70;animation:sweep .55s both}
+.primary.hold{touch-action:none}.board canvas{max-height:none}.envelope{animation:arrive .55s both}
+@keyframes curtain{from{transform:translateX(-45%);opacity:0}to{transform:none;opacity:.9}}
+@keyframes arrive{from{opacity:0;transform:translateY(13px)}to{opacity:1;transform:none}}
+@keyframes sweep{from{clip-path:polygon(0 0,0 0,0 100%,0 100%);opacity:.95}36%{clip-path:polygon(0 0,38% 0,25% 100%,0 100%);opacity:.85}to{clip-path:polygon(100% 0,100% 0,100% 100%,100% 100%);opacity:0}}
+@media(max-width:520px){.intro h1{font-size:clamp(2.1rem,8.2vw,3.1rem)}.intro{background:linear-gradient(117deg,#202a49 0 25%,#304569ee 50%,#30456900 90%)}.board canvas{aspect-ratio:720/570}}
+
+</style>
+
+
+
+</head>
+<body>
+<main class="kitchen">
+  <header class="toolbar">
+    <div class="brand"><span aria-hidden="true">✷</span> 玲子的生日厨房</div>
+    <div class="utilities">
+      <button class="quiet" id="sound" type="button" aria-pressed="false">声音关</button>
+      <button class="bag" id="bag" type="button">福袋 <span id="count">0</span></button>
+    </div>
+  </header>
+  <nav class="steps" aria-label="制作进度">
+    <span>备料</span><span>烘烤</span><span>夹心</span><span>装饰</span><span>切蛋糕</span>
+  </nav>
+  <section id="board" class="board" aria-label="蛋糕工作台">
+    <canvas id="scene" width="720" height="570" aria-label="彩绘厨房和可操作的蛋糕"></canvas>
+    <div id="intro" class="intro">
+      <span class="intro-star" aria-hidden="true">✦</span>
+      <h1>dear玲子，<br>20岁生日快乐</h1>
+      <button id="start" class="primary" type="button">开始做蛋糕</button>
+    </div>
+    <button id="ticket" class="ticket" type="button" hidden>本场选片人 · 玲子</button>
+    <div id="envelope" class="envelope" hidden>
+      <button id="open-letter" type="button"><span>✦</span>给玲子</button>
+    </div>
+  </section>
+  <section id="work" class="work" hidden aria-label="当前步骤">
+    <div class="instruction">
+      <h2 id="step-title"></h2>
+      <p id="hint" aria-live="polite"></p>
+    </div>
+    <div id="choices" class="choices"></div>
+    <div id="actions" class="actions"></div>
+  </section>
+</main>
+<dialog id="paper-dialog" class="paper">
+  <div class="paper-mark" aria-hidden="true">✦</div>
+  <h2 id="paper-title"></h2>
+  <div id="paper-body"></div>
+  <button id="paper-button" class="primary" type="button"></button>
+</dialog>
+<script>
+// Write your letter body between these backticks. The greeting is added by the game.
+window.birthdayLetter = ``;
+
+</script>
+<script>
+"use strict";
+
+function drawKitchen(ctx, state, time) {
+  const { step, progress, frosting, fillings, toppings, cut, eggTaps, oven, strokes, candleX } = state;
+  const wave = Math.sin(time / 950);
+  function fill(color, shape) {
+    ctx.beginPath();
+    shape();
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+  function ellipse(x, y, rx, ry, color, rotation = 0) {
+    fill(color, () => ctx.ellipse(x,y,rx,ry,rotation,0,Math.PI*2));
+  }
+  function rect(x,y,w,h,r,color) {
+    fill(color, () => ctx.roundRect(x,y,w,h,r));
+  }
+  function poly(color, ...points) {
+    fill(color, () => { ctx.moveTo(...points[0]); points.slice(1).forEach(p => ctx.lineTo(...p)); ctx.closePath(); });
+  }
+  function curve(color, width, shape) {
+    ctx.beginPath(); shape(); ctx.strokeStyle=color; ctx.lineWidth=width; ctx.lineCap="round"; ctx.stroke();
+  }
+  function ingredient(name, x, y, scale = 1) {
+    ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);
+    if (name === "草莓") {
+      fill("#ba3d60",()=>{ctx.moveTo(0,15);ctx.bezierCurveTo(-28,-4,-20,-22,0,-13);ctx.bezierCurveTo(20,-22,28,-4,0,15);});
+      poly("#657e65",[-12,-15],[-3,-17],[0,-24],[5,-17],[13,-15],[0,-11]);
+      for (const [a,b] of [[-9,-6],[1,-7],[9,-3],[-4,1],[4,5]]) ellipse(a,b,1.4,2,"#f6d7ab",-.35);
+    } else if (name === "蓝莓") {
+      ellipse(-7,4,11,10,"#52679a");ellipse(7,-2,11,10,"#6b7fb0");ellipse(4,-5,4,2,"#a0acd1");
+    } else if (name === "芒果" || name === "蜜桃") {
+      poly(name==="芒果"?"#f0ae52":"#eca087",[-15,-5],[-2,-14],[15,-7],[13,8],[-3,15],[-15,6]);
+      poly("#ffd197",[-15,-5],[-2,-14],[15,-7],[0,1]);
+    } else if (name === "巧克力碎") {
+      poly("#57373f",[-18,8],[-13,-11],[1,-6],[8,8],[-1,15]);
+      poly("#81524d",[4,-4],[14,-12],[20,2],[12,9]);
+    } else if (name === "生日牌") {
+      rect(-44,-12,88,24,5,"#583c48");ctx.fillStyle="#fff0df";ctx.font="bold 12px sans-serif";ctx.textAlign="center";ctx.fillText("玲子生日快乐",0,4);
+    } else if (name === "糖霜") {
+      ellipse(0,3,14,7,"#d58ca8");ellipse(0,0,11,7,"#fff1e8");ellipse(1,-5,6,5,"#fff9ef");
+    } else {
+      const c={"奶糯米":"#fff3e3","开心果奶芙":"#a8bc86","脆饼碎":"#d19656","爆米花":"#f3d49a"}[name] || "#f3d49a";
+      ellipse(-7,3,10,9,c);ellipse(7,4,11,8,c);ellipse(1,-4,11,9,c);ellipse(0,-6,5,3,"#fff6d6");
+    }
+    ctx.restore();
+  }
+  function egg(x,y,cracks = 0) {
+    ellipse(x+4,y+27,39,10,"#6c819b39");
+    fill("#fbecda",()=>{ctx.moveTo(x,y-44);ctx.bezierCurveTo(x-24,y-44,x-43,y+20,x-18,y+32);ctx.bezierCurveTo(x+22,y+52,x+48,y+18,x+27,y-17);ctx.quadraticCurveTo(x+15,y-44,x,y-44);});
+    ellipse(x-9,y-11,12,22,"#fff7e9",.35);
+    if(cracks) curve("#a47868",2,()=>{ctx.moveTo(x-29,y+1);ctx.lineTo(x-15,y-5);ctx.lineTo(x-5,y+5);ctx.lineTo(x+9,y-4);ctx.lineTo(x+18,y+5);ctx.lineTo(x+30,y-1);});
+  }
+  function bowl(x,y,amount) {
+    ellipse(x+6,y+114,155,25,"#26395731");
+    fill("#8faec2",()=>{ctx.moveTo(x-156,y);ctx.quadraticCurveTo(x-132,y+126,x,y+128);ctx.quadraticCurveTo(x+127,y+125,x+156,y);ctx.closePath();});
+    fill("#bad7df",()=>{ctx.moveTo(x-148,y+5);ctx.quadraticCurveTo(x-99,y+133,x+5,y+112);ctx.quadraticCurveTo(x+98,y+106,x+145,y+8);ctx.closePath();});
+    ellipse(x,y,156,54,"#e1e9ec");ellipse(x,y-2,140,44,"#7e9fb7");
+    if(amount>=0) {
+      ellipse(x,y+17,115+amount*20,24+amount*9,amount>.65?"#fff2cb":"#e8c07f");
+      if(amount<.25) ellipse(x+9,y+13,29,17,"#efad4e");
+      if(amount>.08) curve("#fff8e0",4,()=>ctx.ellipse(x+8,y+14,74,13,0,.25+wave/4,4.4));
+    }
+    curve("#f2f4ed",4,()=>ctx.ellipse(x,y,152,49,0,.1,Math.PI-.09));
+  }
+  function cake(x,y,scale,mode) {
+    ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);
+    ellipse(8,102,180,36,"#2c426a29");ellipse(0,87,174,49,"#adbed0");ellipse(0,80,167,43,"#f1f3ed");
+    const sponge=mode==="sponge"||mode==="filling";
+    const top=sponge?"#efc593":frosting;
+    const side=sponge?"#cd8f62":frosting;
+    fill(side,()=>{ctx.moveTo(-137,0);ctx.lineTo(-137,72);ctx.bezierCurveTo(-124,129,124,129,137,72);ctx.lineTo(137,0);ctx.closePath();});
+    ellipse(0,0,137,48,top);
+    if(mode!=="filling") {
+      curve(sponge?"#a96b53":"#475b772d",5,()=>{ctx.moveTo(-135,49);ctx.bezierCurveTo(-110,86,107,91,135,49);});
+      curve("#fffaf3a8",4,()=>{ctx.ellipse(0,-1,122,38,0,.21,Math.PI-.25);});
+    }
+    if(sponge) {
+      for(let i=0;i<32;i++) ellipse(((i*53)%226)-113,26+(i*17)%49,2+i%3,1+i%2,"#874a4348");
+    }
+    if(mode==="filling") {
+      ellipse(0,0,127,39,"#fff3dd");
+      fillings.forEach((item,i)=>{for(let n=0;n<3;n++) ingredient(item,-82+((i*47+n*62)%157),-17+((i*14+n*13)%34),.65);});
+    }
+    if(mode==="decorated" || mode==="cut" || mode==="candle") {
+      for(const item of toppings) ingredient(item.name,item.x,item.y,item.scale || 1);
+      for(const line of strokes) curve("#b54366",5,()=>{line.forEach((p,i)=>i?ctx.lineTo(...p):ctx.moveTo(...p));});
+    }
+    if(mode==="cut") {
+      const angle=(point)=>Math.atan2((point[1]-326)/48,(point[0]-360)/137);
+      let a=angle(cut[0]), b=angle(cut[1]);
+      let span=(b-a+Math.PI*2)%(Math.PI*2);
+      if(span>Math.PI){[a,b]=[b,a];span=Math.PI*2-span;}
+      span=Math.max(.26,Math.min(span,Math.PI*.88));
+      const edge=(theta)=>[137*Math.cos(theta),48*Math.sin(theta)];
+      const end=Array.from({length:17},(_,i)=>edge(a+span*i/16));
+      const [ax,ay]=end[0], [bx,by]=end.at(-1);
+      poly("#c4cfd8",[0,0],...end);
+      poly("#e9b986",[0,0],[ax,ay],[ax,ay+68],[0,68]);
+      poly("#f4cd9e",[0,0],[bx,by],[bx,by+68],[0,68]);
+      poly("#fff4dc",[0,28],[bx,by+28],[bx,by+40],[0,40]);
+      fillings.forEach((item,i)=>ingredient(item,bx*(i+1)/(fillings.length+1),34+by*(i+1)/(fillings.length+1),.43));
+      ctx.save();ctx.translate(199,80);ellipse(0,12,84,29,"#a6b8cf");ellipse(0,7,80,25,"#f4f4ee");
+      poly("#eec492",[-48,-18],[45,-4],[27,15],[-48,8]);
+      poly("#fff1db",[-48,-7],[43,5],[40,10],[-48,0]);
+      poly(frosting,[-48,-18],[-13,-57],[47,-5],[6,-12]);
+      fillings.forEach((item,i)=>ingredient(item,-30+i*15,1+i*.75,.4));
+      const garnish = toppings.filter(item=>{
+        const theta=Math.atan2(item.y/48,item.x/137);
+        return (theta-a+Math.PI*2)%(Math.PI*2)<=span;
+      });
+      garnish.slice(0,5).forEach((item,i)=>ingredient(item,9+i%3*10,-29+Math.floor(i/3)*7,.43));
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+  const cover=step==="intro";
+  rect(0,0,720,570,0,"#afc4d8");
+  rect(0,0,720,290,0,"#92abc7");
+  rect(478,27,190,249,7,"#3c547a");rect(488,36,170,224,4,"#d6e4ec");
+  poly("#b0c8de",[488,181],[544,119],[596,159],[658,98],[658,260],[488,260]);
+  poly("#96b0cf",[488,218],[568,181],[655,213],[658,260],[488,260]);
+  ellipse(623,74,21,21,"#faf3d8");rect(568,36,5,225,0,"#7189a6");rect(488,121,170,5,0,"#7189a6");
+  rect(468,258,215,13,4,"#627b9a");
+  rect(0,285,720,285,0,"#d7e3eb");
+  poly("#f7f6ed",[394+wave*8,285],[654,285],[720,471],[720,570],[148,570]);
+  poly("#eef2f0",[464,285],[524,285],[370,570],[270,570]);
+  rect(0,277,720,12,0,"#637c99");
+  for(let i=0;i<9;i++) rect(i*71-14,155,67,2,0,"#c6d6e44f");
+  for(let i=0;i<16;i++) {
+    const x=20+(i*103)%685, y=300+(i*83)%257;
+    curve("#829dbb25",1,()=>{ctx.moveTo(x,y);ctx.lineTo(x+18+i%5*5,y+1);});
+  }
+  rect(44,193,96,79,9,"#647c9b");rect(48,194,88,21,6,"#b9c8d8");rect(56,224,72,8,4,"#95adca");
+  curve("#597594",3,()=>{ctx.moveTo(693,249);ctx.quadraticCurveTo(686,179,693+wave*3,164);});
+  ellipse(685+wave*2,186,16,6,"#789887",.65);ellipse(699+wave*3,174,13,5,"#668777",-.65);
+  rect(675,236,31,32,7,"#9e657a");
+  if(cover) {
+    bowl(508,349,-1);egg(600,330);
+    ingredient("草莓",627,446,1.1);ingredient("蓝莓",666,454,1.05);
+  } else if(oven) {
+    rect(172,117,376,319,26,"#3d506d");rect(190,135,340,67,15,"#677d98");
+    for(let i=0;i<3;i++) ellipse(405+i*43,168,12,12,i===2?"#f0a65c":"#a7bbcd");
+    rect(198,210,324,202,17,"#2b3045");rect(216,226,288,168,12,"#af705e");
+    const height=16+progress*63;
+    ellipse(360,356,115,20,"#724b55");rect(270,352-height,180,height,23,"#db9b69");
+    ellipse(360,352-height,90,24,"#f4c189");
+    curve("#ffe3b956",5,()=>{ctx.moveTo(235,247);ctx.lineTo(307,247);ctx.moveTo(235,247);ctx.lineTo(235,310);});
+    rect(261,208,194,13,6,"#aebed0");
+    if(step==="fruit") {
+      rect(253,449,214,90,15,"#adc1cf");rect(249,442,214,86,15,"#e4c6aa");
+      if(!state.selected.length) {
+        ingredient("草莓",314,484,.9);ingredient("芒果",359,484,.9);ingredient("蓝莓",408,483,.9);
+      }
+      state.selected.forEach((item,i)=>{
+        const x=310+i*90;
+        if(state.prepared.includes(item)) {
+          for(let piece=0;piece<4;piece++)ingredient(item,x-21+piece*13,488+(piece%2)*10,.43);
+        } else ingredient(item,x,486,1.25);
+      });
+      if(state.fruitPrep) {
+        poly("#e9eef2",[419,469],[347,475],[395,493],[428,479]);
+        rect(420,468,38,12,5,"#6d5978");
+      }
+    }
+  } else if(step==="pan" || step==="tap") {
+    ellipse(360,369,165,63,"#627990");ellipse(360,346,156,54,"#485e7a");
+    ellipse(360,349,141,45,"#eac28b");
+    for(let i=0;i<7-Math.round(progress*7);i++) ellipse(268+i*28,345+((i*11)%22),4+i%4,3+i%3,"#ad755d74");
+  } else if(["cutLayer","cream","filling","cap","frost","decorate","insert","light","blow","cut","done"].includes(step)) {
+    const lighting=step==="blow";
+    if(lighting) rect(0,0,720,570,0,"#192442d6");
+    const part=lighting||step==="insert"||step==="light";
+    const mode=step==="done"?"cut":part?"candle":step==="cutLayer"?"sponge":["cream","filling","cap"].includes(step)?"filling":"decorated";
+    const x=step==="done"?287:360, y=326;
+    if(lighting) {
+      const glow=ctx.createRadialGradient(candleX,245,12,candleX,270,220);
+      glow.addColorStop(0,"#ffd48c99");glow.addColorStop(1,"#ffd48c00");rect(0,0,720,570,0,glow);
+    }
+    cake(x,y,1.11,mode);
+    if(part && (step!=="insert" || state.placed)) {
+      rect(candleX-7,257,14,66,5,"#fff1e6");
+      for(let i=0;i<4;i++) poly("#a63858",[candleX-7,262+i*14],[candleX+7,268+i*14],[candleX+7,273+i*14],[candleX-7,268+i*14]);
+      curve("#374157",2,()=>{ctx.moveTo(candleX,260);ctx.lineTo(candleX,248);});
+      if(lighting) {
+        const lean=wave*4+state.breath*15;
+        fill("#ffc86e",()=>{ctx.moveTo(candleX,249);ctx.bezierCurveTo(candleX-16,242,candleX+lean,230,candleX+lean+4,218+state.breath*15);ctx.bezierCurveTo(candleX+lean+5,233,candleX+15,243,candleX,249);});
+        ellipse(candleX+3,242,4,6,"#fff2c1");
+      }
+    }
+    if(step==="cut" && cut.length) {
+      for(const [dx,dy] of cut) curve("#6e5264",4,()=>{ctx.moveTo(360,326);ctx.lineTo(dx,dy);});
+    }
+  } else {
+    bowl(360,333,step==="egg"?-1:step==="mix"?.1+progress*.85:["sift","fold"].includes(step)?.92:.13);
+    if(step==="egg") egg(510-eggTaps*29,317-eggTaps*22,eggTaps);
+    if(step==="sugar") {rect(509,274,59,76,9,"#f6eee7");ellipse(539,276,26,8,"#fff8e9");}
+    if(step==="mix") {
+      ctx.save();ctx.translate(367+wave*31*progress,252);ctx.rotate(.3+wave*.14);
+      rect(-12,-72,24,67,7,"#a14563");
+      for(const width of [10,19,29]) curve("#e6edf5",3,()=>ctx.ellipse(0,31,width,42,0,0,Math.PI*2));
+      ctx.restore();
+    }
+    if(step==="sift") {
+      ellipse(374+wave*17,264,71,22,"#e8e8e1");
+      curve("#596e89",6,()=>{ctx.moveTo(442,265);ctx.lineTo(537,262);});
+      for(let i=0;i<17;i++) ellipse(319+(i*17)%107,270+(i*43+progress*94)%61,2,1.5,"#fff9e8");
+    }
+  }
+}
+
+</script>
+<script>
+"use strict";
+
+const $ = id => document.getElementById(id);
+const wishes = {
+  egg:["敲开鸡蛋","祝你岁岁平安。"],
+  mix:["打发蛋液","祝你健健康康。"],
+  bake:["看见蛋糕鼓起来","祝你有勇气面对未知。"],
+  草莓:["放草莓","祝你每天美食运好好。"],
+  芒果:["放芒果","祝你每天都有好看的番。"],
+  蓝莓:["放蓝莓","祝你睡眠好好。"],
+  蜜桃:["放蜜桃","祝你更了解自己一步。"],
+  巧克力碎:["撒巧克力碎","祝你喜欢的东西都能买到。"],
+  开心果奶芙:["挤开心果奶芙","祝你常常笑到停不下来。"],
+  奶糯米:["加奶糯米","祝你想休息的时候就能好好休息。"],
+  脆饼碎:["撒脆饼碎","祝你想见的人都能见到。"]
+};
+const fruit = ["草莓","芒果","蓝莓","蜜桃"];
+const extras = ["巧克力碎","开心果奶芙","奶糯米","脆饼碎"];
+const palette = {"香草白":"#f8eddd","草莓粉":"#ecb5c8","抹茶绿":"#bcccaa","可可棕":"#b8877a"};
+const stages = {
+  egg:["敲开鸡蛋","敲一下蛋壳，再把鸡蛋掰进碗里。",0],
+  sugar:["倒糖","把糖倒进玻璃碗。",0],
+  mix:["打发蛋液","按住打蛋器，在碗里转几圈。",0],
+  sift:["筛面粉","拖动筛子，让面粉落进碗里。",0],
+  fold:["翻拌面糊","顺着碗底向上翻拌。",0],
+  pan:["倒进模具","把面糊倒进模具。",0],
+  tap:["敲出气泡","轻敲模具两下，就能送进烤箱。",1],
+  fruit:["选水果","边烘烤边备料，挑一两种喜欢的水果。",1],
+  bake:["看蛋糕鼓起来","透过烤箱玻璃看看蛋糕。",1],
+  ovenOut:["取出蛋糕","蛋糕烤好了。",1],
+  cutLayer:["脱模切层","沿蛋糕划一下，把蛋糕胚分成两层。",2],
+  cream:["抹夹心奶油","把奶油抹在下面那层蛋糕上。",2],
+  filling:["铺水果和夹心","点选食材或点台面铺下，每样都藏着一张纸条。",2],
+  cap:["盖上另一层蛋糕","把另一片蛋糕胚盖上去。",2],
+  frost:["抹面奶油","选一个颜色，在蛋糕上抹一圈。",3],
+  decorate:["裱花和摆配料","选好工具，点或划蛋糕顶面。配料可拖动、可撤销。",3],
+  insert:["插蜡烛","点蛋糕顶面，选一个位置插蜡烛。",4],
+  light:["点蜡烛","点烛芯，让蜡烛亮起来。",4],
+  blow:["吹蜡烛","准备好了，就吹蜡烛。",4],
+  cut:["切蛋糕","从蛋糕边缘向里划两刀。",4],
+  done:["玲子，20岁生日快乐","桌上有一封给你的信。",4]
+};
+const key="lingzi-kitchen-v1";
+const reduce = matchMedia("(prefers-reduced-motion: reduce)");
+const canvas = $("scene");
+const ctx = canvas.getContext("2d");
+const paper = $("paper-dialog");
+const fresh = () => ({step:"intro", progress:0, eggTaps:0, collected:[], pending:null, selected:[], fillings:[], toppings:[], frosting:palette["香草白"], strokes:[], cut:[], candleX:360, placed:false, sound:false, fruitPrep:0, prepared:[]});
+let data = fresh();
+try {
+  const saved=JSON.parse(localStorage.getItem(key));
+  if(saved && (saved.step==="intro" || Object.hasOwn(stages,saved.step))) data={...fresh(),...saved};
+} catch {}
+let frame=0, stageTime=performance.now(), drawRequested=false, breath=0, micStop=null, audio=null, tool="草莓", active=null, pressTimer=null, choiceNotice="", modalAction=null;
+function save(){try{localStorage.setItem(key,JSON.stringify(data));}catch{}}
+function tone(freq=480) {
+  if(!data.sound) return;
+  try {
+    const Audio=window.AudioContext||window.webkitAudioContext;
+    audio ??= new Audio();
+    void audio.resume();
+    const oscillator=audio.createOscillator(), gain=audio.createGain();
+    oscillator.frequency.value=freq; oscillator.type="sine";
+    gain.gain.setValueAtTime(.07,audio.currentTime);
+    gain.gain.exponentialRampToValueAtTime(.001,audio.currentTime+.19);
+    oscillator.connect(gain).connect(audio.destination);
+    oscillator.start(); oscillator.stop(audio.currentTime+.2);
+  } catch {}
+}
+function render(now) {
+  drawRequested=false;
+  const oven=["fruit","bake","ovenOut"].includes(data.step);
+  const progress=data.step==="bake"&&!data.pending ? Math.min(1,(now-stageTime)/(reduce.matches?90:3600)) : oven && data.step!=="fruit" ? 1 : data.progress;
+  drawKitchen(ctx,{...data,oven,progress,breath},reduce.matches?0:now);
+  if(data.step==="bake" && !data.pending && progress>=1) bless("bake","ovenOut");
+  if(!reduce.matches||data.step==="bake") redraw();
+}
+function redraw(){if(!drawRequested){drawRequested=true;frame=requestAnimationFrame(render);}}
+function move(step) {
+  if(micStop) micStop();
+  const before=stages[data.step]?.[2];
+  data.step=step;data.progress=0;stageTime=performance.now();choiceNotice="";
+  if(before!==stages[step]?.[2]||["fruit","ovenOut","blow","done"].includes(step)){
+    const board=$("board");board.classList.remove("transition");
+    void board.offsetWidth;board.classList.add("transition");
+  }
+  save();refresh();
+}
+function button(parent,text,handler,{style="choice",pressed,disabled=false}={}) {
+  const el=document.createElement("button");
+  el.type="button";el.className=style;el.textContent=text;el.disabled=disabled;
+  if(pressed!==undefined) el.setAttribute("aria-pressed",String(pressed));
+  el.addEventListener("click",handler);parent.append(el);return el;
+}
+function refresh() {
+  const step=data.step;
+  $("intro").hidden=step!=="intro"; $("work").hidden=step==="intro";
+  $("envelope").hidden=step!=="done";
+  $("ticket").hidden=!(data.toppings.some(p=>p.name==="爆米花"&&data.toppings.some(q=>q.name==="巧克力碎"&&Math.hypot(p.x-q.x,p.y-q.y)<55)));
+  $("board").classList.toggle("candle",["insert","light","blow"].includes(step));
+  $("count").textContent=data.collected.length;
+  $("sound").textContent=data.sound?"声音开":"声音关";
+  $("sound").setAttribute("aria-pressed",String(data.sound));
+  const stage=stages[step];
+  document.querySelectorAll(".steps span").forEach((el,i)=>{
+    el.classList.toggle("active",i===stage?.[2]);el.classList.toggle("done",i<(stage?.[2]??0));
+    if(i===stage?.[2]) el.setAttribute("aria-current","step");else el.removeAttribute("aria-current");
+  });
+  $("choices").replaceChildren();$("actions").replaceChildren();redraw();
+  if(!stage) return;
+  $("step-title").textContent=stage[0];
+  $("hint").textContent=choiceNotice || stage[1];
+  if(data.pending) return;
+  const c=$("choices"), a=$("actions");
+  const main=(label,fn,disabled=false)=>button(a,label,fn,{style:"primary",disabled});
+  const alt=(label,fn)=>button(a,label,fn,{style:"secondary"});
+  if(step==="egg") main(data.eggTaps?"掰开蛋壳":"敲一下",()=>{
+    if(!data.eggTaps){data.eggTaps=1;tone(320);save();refresh();return;}
+    tone(510);bless("egg","sugar");
+  });
+  if(step==="sugar") main("倒糖",()=>progressAction(.5,"mix"));
+  if(step==="mix") main("转动打蛋器",()=>progressAction(.25,null,"mix","sift"));
+  if(step==="sift") main("摇筛子",()=>progressAction(.34,"fold"));
+  if(step==="fold") main("翻拌一下",()=>progressAction(.34,"pan"));
+  if(step==="pan") main("倒入模具",()=>move("tap"));
+  if(step==="tap") main("轻敲模具",()=>progressAction(.5,"fruit"));
+  if(step==="fruit") {
+    for(const item of fruit) button(c,item,()=>{
+      if(data.selected.includes(item)){data.selected=data.selected.filter(x=>x!==item);data.prepared=data.prepared.filter(x=>x!==item);}
+      else if(data.selected.length<2) data.selected.push(item);
+      else choiceNotice="可以选两种水果，先点掉一种再换。";
+      save();refresh();
+    },{pressed:data.selected.includes(item)});
+    const prep=data.selected.find(item=>!data.prepared.includes(item));
+    if(prep) main(prep==="蓝莓"?"洗蓝莓":"切"+prep,prepareFruit);
+    else main("回到烤箱",()=>move("bake"),!data.selected.length);
+  }
+  if(step==="bake") $("hint").textContent="看，蛋糕正在鼓起来。";
+  if(step==="ovenOut") main("戴手套取出",()=>{tone(690);move("cutLayer");});
+  if(step==="cutLayer") main("脱模并切层",()=>move("cream"));
+  if(step==="cream") main("抹夹心奶油",()=>progressAction(.5,"filling"));
+  if(step==="filling") {
+    for(const item of [...data.selected,...extras]) button(c,item,()=>putFilling(item),{pressed:data.fillings.includes(item)});
+    main("夹心铺好了",()=>move("cap"),!data.fillings.some(x=>fruit.includes(x)));
+  }
+  if(step==="cap") main("盖上蛋糕",()=>move("frost"));
+  if(step==="frost") {
+    for(const [name,color] of Object.entries(palette)) button(c,name,()=>{data.frosting=color;save();refresh();},{pressed:color===data.frosting});
+    main("抹一圈奶油",()=>progressAction(.5,"decorate"));
+  }
+  if(step==="decorate") {
+    for(const item of ["草莓","蓝莓","巧克力碎","爆米花","糖霜","生日牌"]) button(c,item,()=>{tool=item;refresh();},{pressed:tool===item});
+    main("装饰好了",()=>move("insert"));
+    alt("放上"+tool,()=>addTopping(360+Math.cos(data.toppings.length*1.9)*74,326+Math.sin(data.toppings.length*1.9)*30));
+    if(data.toppings.length||data.strokes.length) alt("撤销",()=>{
+      if(data.strokes.length) data.strokes.pop();else data.toppings.pop();save();refresh();
+    });
+  }
+  if(step==="insert") main("插上蜡烛",()=>placeCandle(360));
+  if(step==="light") main("点蜡烛",()=>{tone(490);move("blow");});
+  if(step==="blow") {
+    const hold=main("长按吹灭",()=>{});
+    hold.classList.add("hold");
+    hold.addEventListener("pointerdown",e=>{hold.setPointerCapture(e.pointerId);startBlow();});
+    hold.addEventListener("pointerup",stopBlowHold);
+    hold.addEventListener("pointercancel",stopBlowHold);
+    hold.addEventListener("keydown",e=>{if((e.code==="Space"||e.code==="Enter")&&!e.repeat){e.preventDefault();startBlow();}});
+    hold.addEventListener("keyup",stopBlowHold);
+    // Synthesized clicks from assistive technology can activate the same action.
+    hold.addEventListener("click",e=>{if(e.detail===0&&breath===0&&!micStop) startBlow();});
+    alt("用麦克风吹",listenForBlow);
+  }
+  if(step==="cut") main(data.cut.length?"切第二刀":"切第一刀",()=>makeCut(data.cut.length?452:487,data.cut.length?365:309));
+  if(step==="done") {
+    main("保存蛋糕照片",downloadCake);
+    alt("再做一个",()=>show("再做一个？","重新开始后，这一次的蛋糕和福袋会清空。","重新开始",()=>{data=fresh();save();refresh();}));
+  }
+}
+function progressAction(amount,next,wishKey,wishNext) {
+  data.progress=Math.min(1,data.progress+amount);tone(330+data.progress*140);
+  if(data.progress>=1){if(wishKey) bless(wishKey,wishNext);else move(next);}
+  else {save();redraw();}
+}
+function prepareFruit(){
+  const item=data.selected.find(name=>!data.prepared.includes(name));
+  if(!item)return;
+  data.fruitPrep+=1;tone(400);
+  if(data.fruitPrep>=2){data.prepared.push(item);data.fruitPrep=0;choiceNotice=item+"准备好了。";}
+  else choiceNotice="再处理一下"+item+"。";
+  save();refresh();
+}
+function putFilling(item) {
+  if(data.fillings.includes(item)) { openWish(item); return; }
+  if(extras.includes(item)&&data.fillings.filter(x=>extras.includes(x)).length>=2){
+    choiceNotice="额外夹心可以放两样。";refresh();return;
+  }
+  data.fillings.push(item);tone(450);bless(item,"filling");
+}
+function show(title,content,label="合上",action=null,kind="") {
+  if(paper.open) return;
+  $("paper-title").textContent=title;
+  const body=$("paper-body");body.replaceChildren();
+  if(typeof content==="string"){
+    const p=document.createElement("p");p.className=kind;p.textContent=content;body.append(p);
+  } else body.append(content);
+  $("paper-button").textContent=label;modalAction=action;
+  paper.showModal();
+}
+function bless(id,next) {
+  if(data.collected.includes(id)){move(next);return;}
+  data.pending={id,next};save();refresh();openWish(id,true);
+}
+function openWish(id,pending=false) {
+  show(wishes[id][0],wishes[id][1],pending?"放进福袋":"合上",pending?()=>{
+    const next=data.pending.next; data.collected.push(id);data.pending=null;
+    move(next);tone(620);
+    $("bag").classList.remove("pop");void $("bag").offsetWidth;$("bag").classList.add("pop");
+  }:null,"wish");
+}
+$("paper-button").addEventListener("click",()=>{
+  if($("paper-button").disabled)return;
+  const action=modalAction;
+  const close=()=>{paper.close();paper.classList.remove("folding");$("paper-button").disabled=false;modalAction=null;if(action)action();};
+  if(data.pending&&!reduce.matches){$("paper-button").disabled=true;paper.classList.add("folding");setTimeout(close,340);}
+  else close();
+});
+paper.addEventListener("cancel",e=>{if(data.pending)e.preventDefault();});
+$("start").addEventListener("click",()=>move("egg"));
+$("sound").addEventListener("click",()=>{data.sound=!data.sound;save();refresh();tone();});
+$("ticket").addEventListener("click",()=>show("电影票","本场选片人：玲子"));
+$("bag").addEventListener("click",()=>{
+  if(!data.collected.length){show("玲子的福袋","福袋还是空的。");return;}
+  const list=document.createElement("ul");
+  for(const id of data.collected){
+    const li=document.createElement("li"), label=document.createElement("small");
+    label.textContent=wishes[id][0];li.append(label,document.createTextNode(wishes[id][1]));list.append(li);
+  }
+  show("玲子的福袋",list);
+});
+$("open-letter").addEventListener("click",()=>{
+  const body=document.createElement("div");body.className="letter";
+  const greeting=document.createElement("p");greeting.textContent="亲爱的玲子，生日快乐";body.append(greeting);
+  if(window.birthdayLetter?.trim()){
+    const paragraph=document.createElement("p");paragraph.textContent=window.birthdayLetter.trim();body.append(paragraph);
+  }
+  show("给玲子",body,"收起这封信");
+});
+function addTopping(x,y) {
+  if(data.toppings.length>=36){choiceNotice="蛋糕顶已经摆满了。";refresh();return;}
+  const px=Math.max(-113,Math.min(113,(x-360)/1.11)), py=Math.max(-34,Math.min(34,(y-326)/1.11));
+  data.toppings.push({name:tool,x:px,y:py});tone(470);save();refresh();
+}
+function placeCandle(x){data.candleX=Math.max(276,Math.min(445,x));data.placed=true;move("light");}
+function makeCut(x,y) {
+  data.cut.push([x,y]);tone(270);
+  if(data.cut.length>=2) move("done");else {save();refresh();}
+}
+function downloadCake(){
+  const photo=document.createElement("canvas");photo.width=720;photo.height=710;
+  const pc=photo.getContext("2d");pc.fillStyle="#dce7f1";pc.fillRect(0,0,720,710);
+  pc.fillStyle="#29394d";pc.font='bold 39px "SimSun", serif';pc.textAlign="center";pc.fillText("dear玲子，20岁生日快乐",360,80);
+  pc.translate(0,115);drawKitchen(pc,{...data,oven:false,breath:0},0);
+  const link=document.createElement("a");link.href=photo.toDataURL("image/png");link.download="玲子的生日蛋糕.png";link.click();
+}
+function startBlow(){
+  if(data.step!=="blow" || pressTimer) return;
+  if(micStop) micStop();
+  breath=.85;redraw();
+  pressTimer=setTimeout(()=>{pressTimer=null;extinguish();},720);
+}
+function stopBlowHold(){if(pressTimer){clearTimeout(pressTimer);pressTimer=null;breath=0;redraw();}}
+function extinguish(){
+  if(data.step!=="blow")return;
+  if(micStop)micStop();
+  breath=0;tone(300);move("cut");
+}
+async function listenForBlow(){
+  if(micStop || data.step!=="blow")return;
+  const status=message=>{$("hint").textContent=message;};
+  if(!navigator.mediaDevices?.getUserMedia){status("这里无法使用麦克风，可以长按吹灭。");return;}
+  const micButton=[...$("actions").children].find(el=>el.textContent==="用麦克风吹");
+  micButton.disabled=true;
+  try {
+    const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+    if(data.step!=="blow"){stream.getTracks().forEach(track=>track.stop());return;}
+    const Audio=window.AudioContext||window.webkitAudioContext;
+    if(!Audio){stream.getTracks().forEach(track=>track.stop());throw new Error("Audio unavailable");}
+    const microphone=new Audio(), analyser=microphone.createAnalyser(), samples=new Float32Array(1024);
+    analyser.fftSize=1024;microphone.createMediaStreamSource(stream).connect(analyser);
+    let listener=0, hits=0;
+    const timeout=setTimeout(()=>{if(micStop)micStop();status("可以再试一次，或长按吹灭。");},15000);
+    micStop=()=>{cancelAnimationFrame(listener);clearTimeout(timeout);stream.getTracks().forEach(track=>track.stop());void microphone.close(); micStop=null;micButton.disabled=false;};
+    await microphone.resume();
+    if(!micStop || data.step!=="blow")return;
+    status("对着麦克风轻轻吹一口气。");
+    function check(){
+      analyser.getFloatTimeDomainData(samples);
+      const rms=Math.sqrt(samples.reduce((sum,x)=>sum+x*x,0)/samples.length);
+      breath=Math.min(1,rms*10);hits=rms>.065?hits+1:0;redraw();
+      if(hits>4) extinguish();else listener=requestAnimationFrame(check);
+    }
+    listener=requestAnimationFrame(check);
+  } catch {if(micStop)micStop();micButton.disabled=false;status("麦克风没有打开，可以长按吹灭。");}
+}
+function position(e){const box=canvas.getBoundingClientRect();return [(e.clientX-box.left)*720/box.width,(e.clientY-box.top)*570/box.height];}
+canvas.addEventListener("pointerdown",e=>{
+  if(data.pending||paper.open||data.step==="intro"||data.step==="done"||data.step==="bake") return;
+  const [x,y]=position(e);canvas.setPointerCapture(e.pointerId);
+  const drag={x,y,distance:0,step:data.step,original:[x,y],target:null,line:null};
+  if(data.step==="decorate"&&y>278&&y<365&&x>208&&x<512){
+    drag.target=data.toppings.findLast(item=>Math.hypot(item.x*1.11+360-x,item.y*1.11+326-y)<21);
+    if(!drag.target&&tool==="糖霜"){drag.line=[[x/1.11-360/1.11,y/1.11-326/1.11]];data.strokes.push(drag.line);}
+  }
+  active=drag;
+});
+canvas.addEventListener("pointermove",e=>{
+  if(!active)return;
+  const [x,y]=position(e);active.distance+=Math.hypot(x-active.x,y-active.y);active.x=x;active.y=y;
+  if(active.target){active.target.x=Math.max(-113,Math.min(113,(x-360)/1.11));active.target.y=Math.max(-34,Math.min(34,(y-326)/1.11));}
+  if(active.line&&x>221&&x<499&&y>284&&y<366)active.line.push([(x-360)/1.11,(y-326)/1.11]);
+  redraw();
+});
+canvas.addEventListener("pointercancel",()=>{active=null;save();});
+canvas.addEventListener("pointerup",e=>{
+  if(!active)return;
+  const drag=active;active=null;
+  const [x,y]=position(e);if(drag.step!==data.step)return;
+  const d=drag.distance;
+  switch(data.step){
+    case "egg": if(data.eggTaps)bless("egg","sugar");else {data.eggTaps=1;save();refresh();tone(320);} break;
+    case "sugar":progressAction(d>90?1:.5,"mix");break;
+    case "mix":progressAction(Math.max(.18,d/600),null,"mix","sift");break;
+    case "sift":progressAction(Math.max(.25,d/390),"fold");break;
+    case "fold":progressAction(Math.max(.24,d/430),"pan");break;
+    case "pan":move("tap");break;
+    case "tap":progressAction(.5,"fruit");break;
+    case "fruit":prepareFruit();break;
+    case "cutLayer":move("cream");break;
+    case "cream":progressAction(Math.max(.33,d/370),"filling");break;
+    case "filling":{const item=data.selected.find(name=>!data.fillings.includes(name));if(item) putFilling(item);break;}
+    case "cap":move("frost");break;
+    case "frost":progressAction(Math.max(.28,d/400),"decorate");break;
+    case "decorate":
+      if(drag.line&&drag.line.length<2){data.strokes.pop();addTopping(x,y);}
+      else if(!drag.line&&!drag.target&&x>208&&x<512&&y>278&&y<365)addTopping(x,y);
+      else {save();refresh();}
+      break;
+    case "insert":if(y>270&&y<377)placeCandle(x);break;
+    case "light":if(Math.hypot(x-data.candleX,y-251)<78)move("blow");break;
+    case "cut":makeCut(Math.max(221,Math.min(505,x)),Math.max(283,Math.min(371,y)));break;
+  }
+});
+window.addEventListener("pagehide",()=>{if(micStop)micStop();cancelAnimationFrame(frame);});
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden){stopBlowHold();if(micStop)micStop();}
+  else {drawRequested=false;redraw();}
+});
+reduce.addEventListener("change",redraw);
+refresh();
+if(data.pending)openWish(data.pending.id,true);
+
+</script>
+</body>
+</html>
