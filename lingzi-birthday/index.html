@@ -121,7 +121,15 @@ body{background:radial-gradient(ellipse at 35% 22%,#33445b,#172234 75%);color:#f
 .wish-note{pointer-events:none}.archive .saved-wish{padding:10px 0;border-bottom:1px solid #cbbca7;margin:0}
 #memory-book{width:min(96vw,900px);padding:0;background:#162438;color:#f6ecd9;border:0;border-radius:6px;overflow:hidden}#memory-book::backdrop{background:#0f1727e6}#close-book{position:absolute;right:10px;top:8px;z-index:4}#memory-book button{background:#33435a;color:white;border:1px solid #718197;border-radius:4px;padding:7px 13px}#album-pages header,#album-pages footer{display:flex;align-items:center;gap:20px;padding:14px 18px}#album-pages h2{font:1.2rem serif;margin:0}#album-pages footer{justify-content:center}#photo-rail{display:flex;gap:3%;padding:0 7%;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;touch-action:pan-x;cursor:grab}#photo-rail.dragging{scroll-snap-type:none}#photo-rail figure{flex:0 0 100%;margin:0;height:min(64svh,530px);scroll-snap-align:center;opacity:.68;transition:opacity .25s}#photo-rail figure.current{opacity:1}#photo-rail img{width:100%;height:100%;object-fit:contain;pointer-events:none}#night-sky{position:relative}#fireworks{display:block;width:100%;height:min(75svh,620px)}#skip-fire{position:absolute;bottom:15px;right:15px}.letter-stock{padding:clamp(35px,8vw,80px);background:#faf0d9;color:#263648;min-height:48svh;max-height:80svh;overflow:auto}.letter-stock h2{font:1.35rem serif}.letter-stock #typed-letter{white-space:pre-wrap;line-height:1.9;margin:20px 0}.sr-only{position:absolute;clip-path:inset(50%);width:1px;height:1px;overflow:hidden}
 
+.look-switch{display:flex;flex-wrap:wrap;justify-content:center;gap:5px;margin-top:9px}.look-switch button,.demo-album{pointer-events:auto;background:#293a50;color:#fff4da;border:1px solid #89929a;border-radius:4px;padding:6px 9px}.look-switch button[aria-pressed=true]{background:#f2dfc4;color:#26354a}.demo-album{margin:7px auto;display:block}.intro.with-photo{pointer-events:auto}#photo-rail figure{display:flex;flex-direction:column}#photo-rail figure img{min-height:0;flex:1}#photo-rail figcaption{padding:8px 12px;white-space:pre-wrap;max-height:25%;overflow:auto}
+body[data-look="0"] #photo-rail figure{background:#101824;border-block:12px dotted #4a5463}
+body[data-look="1"] #photo-rail figure{background:#fff6eb;padding:10px 10px 32px;color:#794857;transform:rotate(-1deg)}
+body[data-look="2"] #album-pages{background:#d4edea;color:#214750}body[data-look="2"] #photo-rail figure{padding:12px;border:1px solid #7ea9a6}
+body[data-look="3"] #album-pages{background:#423440}body[data-look="3"] #photo-rail figure{padding:12px;background:repeating-radial-gradient(circle at 105% 65%,#342e36 0 4px,#51444c 5px 6px)}
+body[data-look="4"] #album-pages{background:#201e22;color:#f3d59c}body[data-look="4"] #photo-rail figure{border:1px solid #a68d61;padding:10px}
+
 </style>
+
 
 
 
@@ -1282,6 +1290,55 @@ if(data.pending)openWish(data.pending.id,true);
 
 </script>
 <script>
+const partyLooks=[
+ ["星夜放映厅","#243658","#f4ca78","星","电影票边框","宽银幕照片"],
+ ["草莓照相馆","#ae4f68","#ffd6df","心","奶油花边","拍立得白边"],
+ ["海盐汽水","#397789","#bfe9e3","泡","透明气泡","海蓝留白"],
+ ["复古唱片店","#583b53","#e0a082","音","黑胶与音符","唱片内页"],
+ ["金色首映礼","#756040","#f4d99e","冠","金箔角花","黑金跨页"]
+];
+function partyIndex(){return Math.max(0,Math.min(4,Number(data.look)||0));}
+function partyHat(c,settings,w,h){
+ const index=partyIndex(),[,base,trim]=partyLooks[index];
+ c.save();c.translate(w*settings.x,h*settings.y);c.rotate(settings.angle*Math.PI/180);c.scale(settings.scale,settings.scale);
+ const cone=new Path2D();
+ if(index===4){cone.moveTo(-69,-72);cone.lineTo(-38,-48);cone.lineTo(-23,-96);cone.lineTo(0,-63);cone.lineTo(26,-96);cone.lineTo(38,-49);cone.lineTo(69,-73);cone.lineTo(55,0);}
+ else{cone.moveTo(-61,0);cone.quadraticCurveTo(-25,-83,2,-137);cone.quadraticCurveTo(38,-74,61,0);}
+ cone.quadraticCurveTo(0,14,-61,0);cone.closePath();
+ const silk=c.createLinearGradient(-63,0,65,0);silk.addColorStop(0,base);silk.addColorStop(.43,trim);silk.addColorStop(.76,base);silk.addColorStop(1,base);
+ c.fillStyle=silk;c.shadowColor="#35243b66";c.shadowBlur=5;c.shadowOffsetY=3;c.fill(cone);c.shadowBlur=0;c.shadowOffsetY=0;
+ c.save();c.clip(cone);c.fillStyle=trim;c.strokeStyle=trim;c.lineWidth=2.4;
+ for(let j=0;j<24;j++){let x=(j*47%119)-58,y=-(j*37%129);c.font="16px Georgia";c.fillText(["✧","♥","○","♫","✦"][index],x,y);}
+ c.restore();for(let j=0;j<19;j++){const x=-61+j*6.7,y=2+5*Math.sin(j/18*Math.PI);c.beginPath();c.arc(x,y,index===1?6:3.7,0,7);c.fillStyle=trim;c.fill();}
+ if(index!==4){c.fillStyle=trim;c.textAlign="center";c.font="bold 36px Georgia";c.fillText(index===1?"♥":"✦",2,-124);}
+ c.restore();
+ const marks=[["✧","✷"],["♡","♥"],["◌","○"],["♫","♪"],["✦","✧"]][index];
+ c.save();c.strokeStyle=trim;c.lineWidth=4;c.strokeRect(13,14,w-26,h-28);
+ for(let j=0;j<9;j++){let x=j<5?34+j*28:w-44-(j-5)*32,y=j<5?h-44-(j%2)*16:100+(j%3)*25;c.save();c.translate(x,y);c.rotate((j%3-1)*.18);c.font=(22+j%3*8)+"px Georgia";c.strokeStyle="#fffaec";c.lineWidth=4;c.strokeText(marks[j%2],0,0);c.fillStyle=base;c.fillText(marks[j%2],0,0);c.restore();}
+ c.restore();
+}
+function mountLooks(){
+ const row=document.createElement("div");row.className="look-switch";row.setAttribute("aria-label","生日造型");
+ partyLooks.forEach(([name],i)=>{const b=document.createElement("button");b.type="button";b.textContent=name;b.onclick=()=>{data.look=i;save();apply();paintPortrait();};row.append(b);});
+ $("portrait-studio").append(row);
+ const demo=document.createElement("button");demo.type="button";demo.className="demo-album";demo.textContent="预览相册与烟花";demo.onclick=()=>startAlbum(true);row.after(demo);
+ function apply(){document.body.dataset.look=partyIndex();[...row.children].forEach((b,i)=>b.setAttribute("aria-pressed",String(i===partyIndex())));}
+ apply();
+}
+function finaleLetters(c,w,h,age,color){
+ const cache=finaleLetters.cache??=new Map(),key=w+"x"+h;
+ if(!cache.has(key)){
+ const mask=document.createElement("canvas");mask.width=Math.round(w);mask.height=Math.round(h);const g=mask.getContext("2d");
+ g.textAlign="center";g.textBaseline="middle";g.fillStyle="white";let size=Math.min(w*.132,h*.15);g.font="bold "+size+"px 'Microsoft YaHei',sans-serif";g.fillText("玲子20岁",w*.5,h*.39);g.fillText("生日快乐",w*.5,h*.39+size*1.3);
+ const pix=g.getImageData(0,0,mask.width,mask.height).data,pts=[];const stride=Math.max(2,Math.ceil(w/220));
+ for(let y=0;y<mask.height;y+=stride)for(let x=0;x<mask.width;x+=stride)if(pix[(y*mask.width+x)*4+3]>90)pts.push([x,y]);cache.set(key,pts);}
+ const t=Math.min(1,age/.95),ease=1-(1-t)**3;c.fillStyle=color;
+ cache.get(key).forEach(([x,y],i)=>{const phi=i*2.39996;c.globalAlpha=.78+.22*Math.sin(age*4+i);c.beginPath();c.arc(x+Math.cos(phi)*(1-ease)*w*.30,y+Math.sin(phi)*(1-ease)*h*.28,Math.max(1.2,w/405),0,7);c.fill();});c.globalAlpha=1;
+}
+
+
+</script>
+<script>
 "use strict";
 
 const photoURLs=[];
@@ -1326,18 +1383,7 @@ function paintPortrait(){
   c.clearRect(0,0,w,h);c.fillStyle="#e9dfcb";c.fillRect(0,0,w,h);
   const inset=16,imgWidth=w-inset*2,imgHeight=imgWidth*coverPhoto.height/coverPhoto.width,top=h-imgHeight-inset;
   c.drawImage(coverPhoto,inset,top,imgWidth,imgHeight);
-  c.save();c.translate(w*settings.x,h*settings.y);c.rotate(settings.angle*Math.PI/180);c.scale(settings.scale,settings.scale);
-  // The hat pivots at its brim, which stays against the hairline as it tilts.
-  c.shadowBlur=5;c.shadowColor="#3a242e65";c.shadowOffsetY=3;
-  c.fillStyle="#d9b09b";c.beginPath();c.ellipse(0,-3,66,9,0,0,Math.PI*2);c.fill();c.shadowBlur=0;c.shadowOffsetY=0;
-  const cone=new Path2D();cone.moveTo(-65,-5);cone.lineTo(0,-140);cone.lineTo(65,-5);cone.bezierCurveTo(38,8,-38,8,-65,-5);cone.closePath();
-  c.save();c.clip(cone);
-  const silk=c.createLinearGradient(-65,0,65,0);silk.addColorStop(0,"#a35464");silk.addColorStop(.38,"#f4beb3");silk.addColorStop(.63,"#eab0a4");silk.addColorStop(1,"#a05e64");c.fillStyle=silk;c.fillRect(-66,-145,132,154);
-  c.strokeStyle="#ffedd4";c.lineWidth=11;
-  for(let y=-157;y<55;y+=34){c.beginPath();c.moveTo(-75,y);c.quadraticCurveTo(0,y+34,78,y-10);c.stroke();}
-  c.restore();c.fillStyle="#fbdeb0";
-  for(let j=0;j<19;j++){const a=j*2.4,r=2.2*Math.sqrt(j);c.beginPath();c.arc(Math.cos(a)*r,-141+Math.sin(a)*r,4+j%2,0,Math.PI*2);c.fill();}
-  c.restore();
+  partyHat(c,settings,w,h);
 }
 function pointerSpot(e){
   const b=portrait.getBoundingClientRect();return [(e.clientX-b.left)/b.width,(e.clientY-b.top)/b.height];
@@ -1361,9 +1407,9 @@ for(const [id,field] of [["hat-size","scale"],["hat-angle","angle"]]){
   $(id).addEventListener("input",e=>{hat()[field]=Number(e.target.value);paintPortrait();save();});
 }
 function scheduleAlbum(){clearTimeout(startBookTimer);startBookTimer=setTimeout(()=>{if(data.step==="done"&&!paper.open&&!book.open)startAlbum();},1600);}
-async function startAlbum(){
+async function startAlbum(preview=false){
   clearTimeout(startBookTimer);if(book.open)return;
-  await loadAlbum;if(book.open||paper.open||data.step!=="done")return;
+  await loadAlbum;if(book.open||paper.open||(!preview&&data.step!=="done"))return;
   book.showModal();bookPhase="gallery";
   $("album-pages").hidden=false;$("night-sky").hidden=true;$("birthday-letter").hidden=true;
   if(!photoURLs.length){showFireworks();return;}
@@ -1371,7 +1417,7 @@ async function startAlbum(){
   photoURLs.forEach((url,i)=>{
     const frame=document.createElement("figure"),img=new Image();
     img.src=i===7&&coverPhoto?portrait.toDataURL("image/jpeg",.86):url;img.alt="生日相册第 "+(i+1)+" 张";
-    frame.append(img);rail.append(frame);
+    frame.append(img);const text=window.birthdayCaptions?.[i];if(text){const caption=document.createElement("figcaption");caption.textContent=text;frame.append(caption);}rail.append(frame);
   });
   slide=0;rail.scrollLeft=0;showSlide(0,false);
 }
@@ -1419,6 +1465,7 @@ function showFireworks(){
   sky.width=w*dpr;sky.height=h*dpr;c.setTransform(dpr,0,0,dpr,0,0);
   const stars=Array.from({length:55},(_,i)=>[w*((i*71%113)/113),h*((i*43%97)/120),i%4===0?1.4:.65]);
   const volleys=[[.17,.33,.39,"247,194,146"],[.85,.70,.32,"223,163,178"],[1.65,.49,.22,"241,219,171"],[2.3,.22,.46,"151,193,220"],[2.65,.75,.40,"247,202,163"]];
+  for(let j=0;j<24;j++)volleys.push([3+j*.16,.10+(j*37%83)/100,.13+(j*19%43)/100,["238,184,133","204,168,217","159,205,223","255,221,163"][j%4]]);
   const start=performance.now();
   function draw(now){
     if(bookPhase!=="fire")return;
@@ -1439,7 +1486,8 @@ function showFireworks(){
         }
       }
     }
-    if(t>(reduce.matches?.8:5.1))typeLetter();else fireFrame=requestAnimationFrame(draw);
+    if(t>(reduce.matches?.05:7.1))finaleLetters(c,w,h,reduce.matches?1:t-7.1,partyLooks[partyIndex()][2]);
+    if(t>(reduce.matches?3.8:12.4))typeLetter();else fireFrame=requestAnimationFrame(draw);
   }
   fireFrame=requestAnimationFrame(draw);
 }
@@ -1479,6 +1527,8 @@ loadAlbum=openAlbumFiles().catch(()=>{
   $("album-status").hidden=false;$("album-status").textContent="照片未能打开。请使用包含 #album= 的完整生日链接重新打开。";
 }).finally(()=>{$("start").disabled=false;});
 
+
+mountLooks();
 
 </script>
 </body>
